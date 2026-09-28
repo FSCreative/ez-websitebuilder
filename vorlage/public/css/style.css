@@ -1,0 +1,35 @@
+/* Stil der Website. Die Variablen --ez-* geben dem Websitebuilder die Marke. */
+:root{
+  --ez-akzent:#0071e3; --ez-titelschrift:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+  --ez-textschrift:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif; --ez-text:#3a3a3c; --ez-radius:12px;
+}
+*{box-sizing:border-box} body{margin:0;font:17px/1.55 var(--ez-textschrift);color:var(--ez-text)}
+h1,h2{font-family:var(--ez-titelschrift);color:var(--titelfarbe,#1d1d1f);letter-spacing:-.02em;margin:0 0 .4em}
+.abschnitt{max-width:980px;margin:0 auto;padding:clamp(3rem,8vw,6rem) 1.2rem}
+/* Kopfzeile nach Konvention: .gnav / #navlinks / #burger */
+.gnav{position:sticky;top:0;z-index:30;background:var(--kopffarbe,rgba(255,255,255,.8));-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08)}
+.gnav-inner{max-width:1100px;margin:0 auto;padding:.8rem 1.2rem;display:flex;align-items:center;gap:1rem}
+.logo{font-weight:600;color:#1d1d1f;text-decoration:none}
+.navlinks{margin-left:auto;display:flex;gap:1.4rem;align-items:center}
+.navlinks a{color:var(--menufarbe,#1d1d1f);text-decoration:none;font-size:.9rem}
+.navlinks a.on{font-weight:600}
+.navlinks .navcta{background:var(--ez-akzent);color:#fff;padding:.45rem .9rem;border-radius:980px}
+.burger{display:none;margin-left:auto;width:40px;height:36px;border:0;background:none;flex-direction:column;justify-content:center;gap:5px;padding:0}
+.burger span{display:block;height:1.5px;background:#1d1d1f}
+@media (max-width:820px){
+  .burger{display:flex}
+  .navlinks{position:fixed;left:0;right:0;top:var(--nav-unten,56px);bottom:0;background:#fff;flex-direction:column;align-items:stretch;gap:0;padding:1rem 0;transform:translateY(-120%);transition:transform .3s}
+  body.navopen .navlinks{transform:none}
+  .navlinks a{padding:1rem 1.2rem;border-bottom:1px solid rgba(0,0,0,.06)}
+}
+/* Startbild */
+.hero{position:relative;min-height:78vh;display:grid;place-items:center;overflow:hidden;color:#fff;text-align:center}
+.hero-bild{position:absolute;inset:0;background-size:cover;background-position:center}
+.hero-bild.parallax{inset:calc(-1 * var(--px,8%)) 0}
+.hero::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.hero-text{position:relative;z-index:1;padding:1rem}
+.hero h1{color:#fff;font-size:clamp(2.4rem,7vw,4.5rem)}
+.ez-knopf{display:inline-block;background:var(--ez-akzent);color:#fff;text-decoration:none;padding:.75rem 1.4rem;border-radius:980px;font-weight:500}
+/* Fusszeile */
+.sitefoot{background:var(--fussfarbe,#f5f5f7);color:var(--fussschrift,#6e6e73)}
+.sf-inner{max-width:1100px;margin:0 auto;padding:2.5rem 1.2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem}
