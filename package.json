@@ -1,17 +1,36 @@
 {
   "name": "ez-websitebuilder",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "EZ Websitebuilder – Websites direkt auf der Seite bearbeiten (Editor, Blöcke, Bilder, Menü, Design, Animationen)",
   "type": "module",
   "main": "index.js",
   "exports": {
     ".": "./index.js",
     "./store.js": "./store.js",
+    "./anmeldung.js": "./anmeldung.js",
+    "./next-server.js": "./next-server.js",
     "./package.json": "./package.json"
   },
-  "files": ["index.js", "store.js", "client/", "vorlage/", "README.md"],
-  "engines": { "node": ">=20" },
-  "peerDependencies": { "express": "^4.19.2" },
-  "peerDependenciesMeta": { "express": { "optional": false } },
+  "files": [
+    "index.js",
+    "store.js",
+    "anmeldung.js",
+    "next-server.js",
+    "next/",
+    "client/",
+    "vorlage/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "express": "^4.19.2"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": false
+    }
+  },
   "license": "UNLICENSED"
 }

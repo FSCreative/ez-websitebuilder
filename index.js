@@ -93,10 +93,18 @@ export function mountBuilder(app, opts) {
     const g = await store.getPage('_global').catch(() => ({}));
     return g && Object.keys(g).length > 0;
   };
+  /* Inhalte einer Seite (eigene + globale Felder). Kurz zwischengespeichert,
+     weil Next.js-Seiten sie fuer jedes bearbeitbare Element abfragen; nach
+     dem Speichern sofort frisch. */
+  const felderSpeicher = new Map();
   const felderFuer = async (slug) => {
+    const t = felderSpeicher.get(slug);
+    if (t && Date.now() - t.zeit < 5000) return t.werte;
     const [eigen, global] = await Promise.all([
-      store.getPage(slug), store.getPage('_global').catch(() => ({}))]);
-    return { ...(global || {}), ...(eigen || {}) };
+      store.getPage(slug).catch(() => ({})), store.getPage('_global').catch(() => ({}))]);
+    const werte = { ...(global || {}), ...(eigen || {}) };
+    felderSpeicher.set(slug, { zeit: Date.now(), werte });
+    return werte;
   };
 
   /* ---------------- Seiten ---------------- */
@@ -115,7 +123,7 @@ export function mountBuilder(app, opts) {
     res.json({ slug: req.params.slug, fields: await store.getPage(req.params.slug) });
   });
 
-  app.put('/api/pages/:slug', requireStaff, async (req, res) => {
+  app.put('/api/pages/:slug', requireStaff, express.json({ limit: '2mb' }), async (req, res) => {
     if (!PAGE_SLUGS.has(req.params.slug)) return res.status(404).json({ error: 'Unbekannte Seite' });
     const fields = cleanFields(req.body?.fields);
     /* Die Website darf einzelne Felder selbst ablegen (etwa eine Speisekarte,
@@ -125,6 +133,7 @@ export function mountBuilder(app, opts) {
     for (const [k, v] of Object.entries(fields)) (istGlobal(k) ? global : eigen)[k] = v;
     if (Object.keys(global).length || await hatGlobales()) await store.savePage('_global', global);
     await store.savePage(req.params.slug, eigen);
+    felderSpeicher.clear();
     res.json({ ok: true, fields });
   });
 
@@ -154,7 +163,9 @@ export function mountBuilder(app, opts) {
     const anker = [];
     for (const seite of PAGES) {
       let html = '';
-      try { html = await fs.promises.readFile(path.join(publicDir, seite.datei), 'utf8'); } catch { /* keine Datei */ }
+      try {
+        html = opts.seiteHtml ? await opts.seiteHtml(seite) : await fs.promises.readFile(path.join(publicDir, seite.datei), 'utf8');
+      } catch { /* keine Datei */ }
       const eigene = [];
       try {
         for (const [k, v] of Object.entries(await store.getPage(seite.slug) || {})) {
@@ -343,7 +354,8 @@ export function mountBuilder(app, opts) {
     const json = JSON.stringify(fields).replace(/</g, '\\u003c');
     return mitFassung(out).replace('</head>', `<script id="ez-daten" type="application/json">${json}</script>\n</head>`);
   }
-  for (const seite of PAGES) {
+  /* Next.js & Co. rendern ihre Seiten selbst (seitenAusliefern: false). */
+  if (opts.seitenAusliefern !== false) for (const seite of PAGES) {
     app.get(seite.pfad, (req, res, next) => {
       fs.readFile(path.join(publicDir, seite.datei), 'utf8', async (err, html) => {
         if (err) return next();
@@ -363,6 +375,7 @@ export function mountBuilder(app, opts) {
     /* Routen mit eigenem, grossem Body-Parser - der allgemeine kleine
        Parser der Website muss sie durchlassen. */
     grosseRumpfe: ['/api/images', '/api/videos'],
+    slugFuer: (pfad) => (PAGES.find((p) => p.pfad === pfad) || {}).slug || null,
     felderFuer
   };
 }

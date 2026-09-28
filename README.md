@@ -126,6 +126,32 @@ window.EZ_EDITOR.knopf({ text: 'Karte aus PDF', seiten: ['speisekarte'], klick: 
 
 Verfügbar: `seite, api, toast, hinweis, stand, beschaeftigt, setzen, knopf, datei`.
 
+## Next.js-Websites
+
+Für Websites mit Next.js (App Router) gibt es einen eigenen Server, der Next.js und den Builder zusammen startet – inklusive Anmeldung (`/login`) und optionaler Auswahlseite für mehrere Websites (`/admin`).
+
+1. `package.json`: `ez-websitebuilder`, `express` und `pg` als Abhängigkeiten, `"start": "node server.mjs"`.
+2. `server.mjs`:
+   ```js
+   import { starteNextMitBuilder } from 'ez-websitebuilder/next-server.js';
+   starteNextMitBuilder();   // optional: { sendMail, formularAn }
+   ```
+   Dockerfile: `CMD ["node", "server.mjs"]`, ohne `output: "standalone"`.
+3. `next/Ez.tsx` und `next/EzLaufzeit.tsx` nach `src/components/` kopieren.
+4. Layout: `export const dynamic = "force-dynamic"`, im `<head>` `<link rel="stylesheet" href="/builder/builder.css" precedence="low" />`, am Ende von `<body>` `<EzLaufzeit />`.
+5. Texte: `<Ez as="h2" k="start.titel">Standardtext</Ez>`, Bilder: `<EzBild src="/images/…" … />` statt `<Image>`. Nur in Server-Komponenten.
+6. `public/js/ez-site.js` mit `window.EZ_SITE` (siehe oben), zusätzlich:
+   `vollNeuladen: true, abschnittWurzel: 'main, main > .page-enter', inhalt: 'main > .page-enter, main'`.
+7. `site.config.json`: Seiten mit Slug = Pfad mit `-` statt `/` (`/zimmer/blau` → `zimmer-blau`).
+
+Umgebung: `DATABASE_URL` (Postgres), `EDITOR_PASSWORT`. Mehrere Websites mit demselben `EDITOR_PASSWORT` wechseln über die Auswahlseite ohne neue Anmeldung:
+
+```json
+"admin": { "pfad": "/admin", "seiten": [
+  { "titel": "Website A", "link": "/website" },
+  { "titel": "Website B", "link": "https://website-b.at/website" } ] }
+```
+
 ## Änderungen am System
 
 Änderungen am Builder immer **hier** machen, nie im `node_modules`-Ordner einer Website. Nach einer Änderung übernehmen alle angeschlossenen Websites die neue Fassung innerhalb von etwa 30 Minuten – oder sofort über *Actions → Builder aktualisieren → Run workflow* im jeweiligen Website-Repository.
