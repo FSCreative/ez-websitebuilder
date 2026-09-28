@@ -1259,6 +1259,9 @@ $('#imgBack').addEventListener('click', () => bildSheet(false));
 window.addEventListener('message', (e) => {
   if (e.origin !== HERKUNFT || !e.data || typeof e.data !== 'object') return;
   if (e.data.typ === 'ez-bereit') {
+    /* Kopf-/Fusszeile im Builder-Format? Sonst den Bereich dafuer ausblenden. */
+    const nd = document.querySelector('.es-pane-design .es-nd');
+    if (nd && e.data.rahmen !== undefined) nd.hidden = !e.data.rahmen;
     $('#etBusy').hidden = true;
     if (!zustand.vorschau) rahmen()?.postMessage({ typ: 'ez-schriften' }, HERKUNFT);
     /* Es gibt nur noch einen Modus - anklicken, tippen, ziehen. */

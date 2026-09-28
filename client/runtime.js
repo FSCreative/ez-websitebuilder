@@ -179,7 +179,18 @@ const heroAnimation = (function () {
 (function inhalte() {
   /* Kopf und Fuss muessen stehen, bevor wir den Ausgangszustand festhalten. */
   baueRahmen();
-  const SLUG = (location.pathname.replace(/\/$/, '') || '/index').replace(/^\//, '') || 'index';
+  const SLUG = SITE.slug || (location.pathname.replace(/\/$/, '') || '/index').replace(/^\//, '').replace(/\//g, '-') || 'index';
+  if (SITE.vollNeuladen && !(new URLSearchParams(location.search).get('edit') === '1' && window.parent !== window)) {
+    window.addEventListener('click', (e) => {
+      const a = e.target.closest && e.target.closest('a[href]');
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if ((a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+      const url = new URL(a.href, location.href);
+      if (url.origin !== location.origin || (url.pathname === location.pathname && url.hash)) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      location.href = url.href;
+    }, true);
+  }
   const suche = new URLSearchParams(location.search);
   const imRahmen = window.parent !== window;
   const editModus = suche.get('edit') === '1' && imRahmen;
@@ -489,7 +500,7 @@ const heroAnimation = (function () {
       return;
     }
     document.querySelectorAll(`[data-ez="${CSS.escape(feld)}"]`).forEach((el) => {
-      el.innerHTML = wert;
+      if (el.innerHTML !== wert) el.innerHTML = wert;
     });
     document.querySelectorAll(`[data-ez-img="${CSS.escape(feld)}"]`).forEach((el) => {
       bildOderVideo(el, wert);
@@ -509,7 +520,12 @@ const heroAnimation = (function () {
     const willVideo = istVideo(wert);
     const istBereits = el.tagName === 'VIDEO';
     if (willVideo === istBereits) {
-      if (el.getAttribute('src') !== wert) el.setAttribute('src', wert);
+      if (el.getAttribute('src') !== wert) {
+        /* Ein neues Foto ersetzt auch alle vorberechneten Groessen (srcset) -
+           sonst zeigt der Browser weiter das alte. */
+        el.removeAttribute('srcset'); el.removeAttribute('sizes');
+        el.setAttribute('src', wert);
+      }
       if (!willVideo) {
         const a = el.closest('a');
         if (a && /\.(jpe?g|png|webp)$/i.test(a.getAttribute('href') || '')) a.href = wert;
@@ -518,7 +534,7 @@ const heroAnimation = (function () {
     }
     const neu = document.createElement(willVideo ? 'video' : 'img');
     for (const at of el.attributes) {
-      if (at.name === 'src' || at.name === 'alt' || at.name === 'loading') continue;
+      if (at.name === 'src' || at.name === 'alt' || at.name === 'loading' || at.name === 'srcset' || at.name === 'sizes') continue;
       neu.setAttribute(at.name, at.value);
     }
     if (willVideo) {
@@ -986,7 +1002,8 @@ const heroAnimation = (function () {
   const ABSCHNITT = SITE.abschnitte;
   const abschnittVon = (el) => el.closest(ABSCHNITT);
   const abschnitte = () => [...document.querySelectorAll(ABSCHNITT)]
-    .filter((el) => el.parentElement === document.body || el.parentElement.tagName === 'MAIN')
+    .filter((el) => el.parentElement === document.body || el.parentElement.tagName === 'MAIN'
+      || (SITE.abschnittWurzel && el.parentElement.matches(SITE.abschnittWurzel)))
     .filter((el) => !el.closest('#siteNav, #siteFoot'));
   /* Der Bezugsschluessel eines Abschnitts - damit ein Block spaeter wieder
      an dieselbe Stelle kommt. */
@@ -1010,15 +1027,27 @@ const heroAnimation = (function () {
     /* Wo hin? Nach dem Abschnitt, in dem das Bezugselement steht, sonst
        ans Ende vor der Fusszeile. */
     let anker = null;
+    /* Websites ohne #siteNav/#siteFoot (etwa Next.js) nennen ihren
+       Inhaltsbereich in EZ_SITE.inhalt - dort beginnen und enden die Bloecke. */
+    const inhalt = String(SITE.inhalt || '').split(',').map((s) => s.trim()).filter(Boolean)
+      .map((s) => document.querySelector(s)).find(Boolean);
     if (def.nach === 'anfang') {
       anker = document.getElementById('siteNav');
+      if (!anker && inhalt) {
+        /* hinter schon vorhandene Bloecke am Anfang, sonst ganz nach vorne */
+        let erster = inhalt.firstElementChild;
+        if (erster && erster.matches('.ezblock[data-block], .ez-plus')) anker = erster;
+        else { inhalt.prepend(el); anker = el; }
+      }
     } else if (def.nach && def.nach !== 'ende') {
       const bezug = document.querySelector(
         `[data-ez="${CSS.escape(def.nach)}"], [data-ez-img="${CSS.escape(def.nach)}"],` +
         `[data-ez-bg="${CSS.escape(def.nach)}"], [data-block="${CSS.escape(def.nach)}"]`);
       anker = bezug && (abschnittVon(bezug) || bezug);
     }
-    if (anker && anker.parentElement) {
+    if (anker === el) {
+      /* schon am Anfang des Inhaltsbereichs eingefuegt */
+    } else if (anker && anker.parentElement) {
       /* Bloecke, die schon hinter dem Anker stehen, kamen frueher in der
          Liste - der neue reiht sich dahinter ein. */
       if (!def.vorne) {
@@ -1028,7 +1057,7 @@ const heroAnimation = (function () {
       anker.after(el);
     } else {
       const fuss = document.getElementById('siteFoot');
-      if (fuss) fuss.before(el); else document.body.appendChild(el);
+      if (fuss) fuss.before(el); else if (inhalt) inhalt.appendChild(el); else document.body.appendChild(el);
     }
     /* Ausgangswerte merken, damit nur Abweichungen gespeichert werden. */
     el.querySelectorAll('[data-ez], [data-ez-img], [data-ez-link]').forEach((k) => {
@@ -1839,7 +1868,7 @@ const heroAnimation = (function () {
     heroAnimation();
     plusLeisten();
     verlaufNeu();
-    melden({ typ: 'ez-bereit', seite: SLUG });
+    melden({ typ: 'ez-bereit', seite: SLUG, rahmen: !!document.querySelector('[data-ez-menue], [data-ez-fuss]') });
     melden({ typ: 'ez-design-werte', werte: { ...designWerte }, menue: menueDaten.map((x) => ({ ...x })) });
     melden({ typ: 'ez-anker-liste', seite: location.pathname, liste: ankerListe() });
   }

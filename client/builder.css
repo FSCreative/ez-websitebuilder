@@ -10,7 +10,7 @@
    eigenen :root auf ihre Marke, zum Beispiel:
      :root { --ez-akzent: var(--marke); --ez-titelschrift: "Playfair Display", serif; }
    Alles, was sie nicht setzt, bleibt beim neutralen Standard hier.       */
-:root{
+:where(:root){
   /* Inhalte */
   --ez-akzent:#1d1d1f; --ez-akzent-hell:#f2f2f7; --ez-akzent-linie:#d1d1d6;
   --ez-tinte:#1d1d1f; --ez-text:#3a3a3c; --ez-leise:#6e6e73;
