@@ -1,0 +1,464 @@
+/* ====== EZ Websitebuilder – Stile fuer die Website ============================
+   Wird vor dem Stylesheet der Website geladen:
+     <link rel="stylesheet" href="/builder/builder.css">
+     <link rel="stylesheet" href="/css/style.css">
+   Teil 1 gilt fuer Gaeste und Editor (Bloecke, Galerien, Formulare,
+   Website-Design, Animationen), Teil 2 nur im Editor-Rahmen (Auswahlrahmen,
+   Plus-Leisten, Rechtsklick).
+
+   Farben und Schriften kommen aus Variablen. Die Website setzt sie in ihrem
+   eigenen :root auf ihre Marke, zum Beispiel:
+     :root { --ez-akzent: var(--marke); --ez-titelschrift: "Playfair Display", serif; }
+   Alles, was sie nicht setzt, bleibt beim neutralen Standard hier.       */
+:root{
+  /* Inhalte */
+  --ez-akzent:#1d1d1f; --ez-akzent-hell:#f2f2f7; --ez-akzent-linie:#d1d1d6;
+  --ez-tinte:#1d1d1f; --ez-text:#3a3a3c; --ez-leise:#6e6e73;
+  --ez-linie:#e5e5ea; --ez-linie-2:#d1d1d6; --ez-flaeche:#f2f2f7; --ez-flaeche-2:#f7f7f9; --ez-weiss:#fff;
+  --ez-radius:6px; --ez-rot:#d70015; --ez-gruen:#248a3d; --ez-gruen-hell:#e8f5ec; --ez-gold:#a2845e;
+  --ez-textschrift:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  --ez-titelschrift:var(--ez-textschrift); --ez-display:var(--ez-titelschrift);
+  --ez-mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --ez-schatten:0 24px 60px -24px rgba(0,0,0,.35);
+  /* Bearbeiten im Rahmen - unabhaengig von der Marke der Website */
+  --ezui-font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",Roboto,Arial,sans-serif;
+  --ezui-mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --ezui-tint:#0071e3; --ezui-tint-hell:#e8f1fd; --ezui-tint-linie:#b3d4f7;
+  --ezui-text:#1d1d1f; --ezui-text-2:#3a3a3c; --ezui-leise:#6e6e73;
+  --ezui-linie:rgba(0,0,0,.1); --ezui-linie-2:rgba(0,0,0,.16);
+  --ezui-flaeche:#f2f2f7; --ezui-flaeche-2:#f9f9fb; --ezui-weiss:#fff;
+  --ezui-rot:#ff3b30; --ezui-gruen:#34c759; --ezui-gruen-hell:#e9f9ee; --ezui-gold:#ff9f0a;
+  --ezui-radius-s:6px;
+  --ezui-schatten:0 10px 30px -8px rgba(0,0,0,.22),0 0 0 .5px rgba(0,0,0,.08);
+}
+
+/* ============ 1. Inhalte ============ */
+/* ---- Hinzugefuegte Bloecke (Website-Editor) ---- */
+.ezblock{padding:clamp(1.6rem,4vw,3rem) clamp(1rem,4vw,2rem)}
+.ezblock-bild > *,.ezblock-video > *,.ezblock-text > *,.ezblock-h > *{
+  max-width:1160px;margin-left:auto;margin-right:auto}
+.ezblock-bild,.ezblock-video{margin:0}
+.ezblock-bild img,.ezblock-bild video,.ezblock-video img,.ezblock-video video{
+  display:block;width:100%;max-height:78vh;object-fit:cover;border-radius:var(--ez-radius)}
+.ezblock-galerie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.6rem,1.6vw,1.2rem);
+  max-width:1224px;margin:0 auto;box-sizing:border-box}
+.ezblock-galerie img,.ezblock-galerie video{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;
+  border-radius:var(--ez-radius)}
+.ezblock-galerie[data-typ="raster2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ezblock-galerie[data-typ="raster2"] > *{aspect-ratio:3/2}
+.ezblock-galerie[data-typ="raster4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ezblock-galerie[data-typ="raster4"] > *{aspect-ratio:1}
+/* Mosaik: das erste Bild gross, die anderen kleiner drumherum */
+.ezblock-galerie[data-typ="mosaik"]{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);
+  grid-auto-flow:dense}
+.ezblock-galerie[data-typ="mosaik"] > *{aspect-ratio:1;height:100%}
+.ezblock-galerie[data-typ="mosaik"] > :first-child{grid-column:span 2;grid-row:span 2}
+.ezblock-galerie[data-typ="mosaik"] > :nth-child(6n+4){grid-column:span 2;aspect-ratio:2/1}
+/* Slider */
+.ezblock-galerie[data-typ="slider"],.ezblock-galerie[data-typ="slidervoll"]{display:block}
+.ezblock-galerie[data-typ="slidervoll"]{max-width:none;padding-left:0;padding-right:0}
+.ezblock-galerie[data-typ="slidervoll"] .ez-slider,.ezblock-galerie[data-typ="slidervoll"] .ez-slides > *{border-radius:0}
+.ez-slider{position:relative;overflow:hidden;border-radius:var(--ez-radius);background:var(--ez-tinte)}
+.ez-slides{display:flex;width:100%;transition:transform .7s cubic-bezier(.4,0,.2,1)}
+.ez-slides img,.ez-slides video{flex:0 0 100%;width:100%;aspect-ratio:16/9;max-height:80vh;
+  object-fit:cover;border-radius:0;margin:0}
+.ez-fade .ez-slides{display:grid;transition:none}
+.ez-fade .ez-slides > *{grid-area:1/1;opacity:0;transition:opacity 1s ease}
+.ez-fade .ez-slides > .ist-aktiv{opacity:1}
+.ez-punkte{position:absolute;left:0;right:0;bottom:.8rem;display:flex;justify-content:center;gap:.4rem;z-index:2}
+.ez-punkte button{width:9px;height:9px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.55);
+  cursor:pointer;transition:transform .2s,background .2s}
+.ez-punkte button.ist-aktiv{background:#fff;transform:scale(1.35)}
+.ez-pfeil{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:42px;height:42px;
+  border:0;border-radius:50%;background:rgba(25,22,62,.45);color:#fff;font-size:1.6rem;line-height:1;
+  cursor:pointer;display:grid;place-items:center;opacity:0;transition:opacity .2s,background .2s}
+.ez-pfeil-l{left:.8rem}.ez-pfeil-r{right:.8rem}
+.ez-slider:hover .ez-pfeil{opacity:1}
+.ez-pfeil:hover{background:rgba(25,22,62,.8)}
+@media (hover:none){ .ez-pfeil{opacity:1}}
+.ezblock-text p{font-size:1.02rem;line-height:1.75;color:var(--ez-text);max-width:760px;margin:0 auto}
+.ezblock-h h2{margin:0 auto;max-width:760px;font-family:var(--ez-titelschrift);font-weight:400;
+  text-transform:uppercase;letter-spacing:.015em;font-size:clamp(1.7rem,3.4vw,2.4rem);line-height:1.1;
+  color:var(--titelfarbe,var(--ez-akzent))}
+.ezblock-text p{color:var(--ez-text)}
+.ezblock-btn{text-align:center}
+.ezblock-btn .btn-dark{background:var(--ez-akzent);border-color:var(--ez-akzent);color:#fff}
+.ezblock-btn .btn-dark:hover{background:var(--ez-tinte);border-color:var(--ez-tinte);color:#fff}
+@media (max-width:720px){
+  .ezblock-galerie:not([data-typ="slider"]):not([data-typ="slidervoll"]){grid-template-columns:1fr 1fr}
+  .ezblock-galerie[data-typ="raster3"] > :nth-child(3n){grid-column:1/-1;aspect-ratio:16/9}
+  .ezblock-galerie[data-typ="mosaik"] > :first-child{grid-column:1/-1;grid-row:auto;aspect-ratio:16/9}
+  .ezblock-galerie[data-typ="mosaik"] > :nth-child(6n+4){grid-column:auto;aspect-ratio:1}}
+
+/* ---- Blockeinstellungen ---- */
+.ezblock[data-hg="hell"]{background:var(--ez-flaeche)}
+.ezblock[data-hg="dunkel"]{background:var(--ez-tinte);color:#fff}
+.ezblock[data-hg="dunkel"] h2,.ezblock[data-hg="dunkel"] p,.ezblock[data-hg="dunkel"] blockquote{color:#fff}
+.ezblock[data-hg="akzent"]{background:var(--ez-akzent);color:#fff}
+.ezblock[data-hg="akzent"] h2,.ezblock[data-hg="akzent"] p,.ezblock[data-hg="akzent"] blockquote{color:#fff}
+.ezblock[data-abstand="klein"]{padding-top:clamp(.6rem,1.5vw,1rem);padding-bottom:clamp(.6rem,1.5vw,1rem)}
+.ezblock[data-abstand="gross"]{padding-top:clamp(3rem,8vw,6rem);padding-bottom:clamp(3rem,8vw,6rem)}
+.ezblock[data-breite="schmal"] > *{max-width:760px}
+.ezblock[data-breite="voll"] > *{max-width:none}
+.ezblock[data-breite="voll"]{padding-left:0;padding-right:0}
+.ezblock[data-breite="voll"] img,.ezblock[data-breite="voll"] video{border-radius:0}
+/* Bild / Video */
+.ezblock[data-rundung="keine"] img,.ezblock[data-rundung="keine"] video{border-radius:0}
+.ezblock[data-rundung="rund"] img,.ezblock[data-rundung="rund"] video{border-radius:28px}
+.ezblock[data-hoehe="klein"] img,.ezblock[data-hoehe="klein"] video{height:clamp(180px,32vw,320px)}
+.ezblock[data-hoehe="mittel"] img,.ezblock[data-hoehe="mittel"] video{height:clamp(260px,46vw,520px)}
+.ezblock[data-hoehe="gross"] img,.ezblock[data-hoehe="gross"] video{height:clamp(360px,64vw,760px)}
+.ez-unterschrift{display:none;margin:.6rem auto 0;font-size:.82rem;color:var(--ez-leise);text-align:center;
+  font-family:var(--ez-mono);letter-spacing:.04em}
+.ezblock[data-unterschrift="1"] .ez-unterschrift{display:block}
+/* Button */
+.ezblock-btn[data-lage="links"]{text-align:left}
+.ezblock-btn[data-lage="rechts"]{text-align:right}
+.ezblock-btn[data-stil="hell"] .btn{background:#fff;border-color:var(--ez-linie-2);color:var(--ez-akzent)}
+.ezblock-btn[data-stil="hell"] .btn:hover{border-color:var(--ez-akzent)}
+.ezblock-btn[data-stil="umriss"] .btn{background:transparent;border-color:currentColor;color:var(--ez-akzent)}
+.ezblock-btn[data-hg="dunkel"][data-stil="umriss"] .btn,.ezblock-btn[data-hg="akzent"][data-stil="umriss"] .btn{color:#fff}
+.ezblock-btn[data-groesse="gross"] .btn{padding:.9rem 1.7rem;font-size:.85rem;min-height:50px}
+/* Trenner */
+.ezblock-trenner{padding-top:0;padding-bottom:0}
+.ezblock-trenner hr{border:0;margin:0 auto;max-width:1160px}
+.ezblock-trenner[data-hoehe="auto"]{height:2rem}
+.ezblock-trenner[data-hoehe="klein"]{height:1rem}
+.ezblock-trenner[data-hoehe="mittel"]{height:4rem}
+.ezblock-trenner[data-hoehe="gross"]{height:7rem}
+.ezblock-trenner{display:grid;align-items:center}
+.ezblock-trenner[data-art="linie"] hr{border-top:1px solid var(--ez-linie-2);width:100%}
+.ezblock-trenner[data-hg="dunkel"][data-art="linie"] hr,.ezblock-trenner[data-hg="akzent"][data-art="linie"] hr{border-color:rgba(255,255,255,.3)}
+/* Zitat */
+.ezblock-zitat{text-align:center}
+.ezblock-zitat blockquote{margin:0 auto;max-width:760px;font-family:var(--ez-display,"Playfair Display",Georgia,serif);
+  font-size:clamp(1.3rem,2.6vw,1.9rem);line-height:1.4;color:var(--titelfarbe,var(--ez-akzent));font-style:italic}
+.ez-zitat-von{margin:.9rem auto 0;font-family:var(--ez-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ez-leise)}
+/* Zwei Spalten */
+.ezblock-spalten{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(1.2rem,4vw,3.5rem);align-items:center;
+  max-width:1224px;margin:0 auto;box-sizing:border-box}
+.ezblock-spalten > *{max-width:none}
+.ezblock-spalten[data-bildseite="links"] .ez-spalte-bild{order:-1}
+.ez-spalte-text h2{font-family:var(--ez-titelschrift);font-weight:400;text-transform:uppercase;letter-spacing:.015em;
+  font-size:clamp(1.6rem,3.4vw,2.4rem);line-height:1.08;margin:0 0 .9rem;color:var(--titelfarbe,var(--ez-akzent))}
+.ez-spalte-text p{color:var(--ez-text);line-height:1.75;margin:0 0 1.2rem}
+.ez-spalte-text .btn-dark{background:var(--ez-akzent);border-color:var(--ez-akzent);color:#fff}
+.ez-spalte-bild{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--ez-radius)}
+@media (max-width:720px){ .ezblock-spalten{grid-template-columns:1fr} .ezblock-spalten[data-bildseite="links"] .ez-spalte-bild{order:0}}
+/* Einbettung (YouTube / Vimeo) */
+.ez-einbettung{position:relative;aspect-ratio:16/9;max-width:1160px;margin:0 auto;background:var(--ez-tinte);border-radius:var(--ez-radius);overflow:hidden}
+.ez-einbettung iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ez-einbettung-leer{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:1rem;text-align:center;
+  color:rgba(255,255,255,.7);font-size:.9rem}
+/* Formular-Block */
+.ezblock-formular h2{font-family:var(--ez-titelschrift);font-weight:400;text-transform:uppercase;letter-spacing:.015em;
+  font-size:clamp(1.6rem,3.4vw,2.4rem);line-height:1.08;margin:0 auto .5rem;color:var(--titelfarbe,var(--ez-akzent));max-width:760px}
+.ezblock-formular > p{color:var(--ez-text);margin:0 auto 1.4rem;max-width:760px}
+.ez-form{max-width:760px;margin:0 auto}
+.ez-form-felder{display:grid;grid-template-columns:1fr 1fr;gap:.9rem 1rem}
+.ez-f{display:flex;flex-direction:column;gap:.35rem}
+.ez-f > span{font-family:var(--ez-mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ez-leise)}
+.ez-f > span i{color:var(--ez-rot,#B4443C);font-style:normal}
+.ez-f input,.ez-f select,.ez-f textarea{width:100%;border:1px solid var(--ez-linie-2);border-radius:10px;padding:.7rem .85rem;
+  font:inherit;font-size:.95rem;background:#fff;color:var(--ez-tinte)}
+.ez-f input:focus,.ez-f select:focus,.ez-f textarea:focus{outline:2px solid var(--ez-akzent);outline-offset:1px;border-color:var(--ez-akzent)}
+.ez-f-breit{grid-column:1/-1}
+.ez-f-haken{flex-direction:row;align-items:center;gap:.6rem}
+.ez-f-haken input{width:18px;height:18px;padding:0}
+.ez-f-haken > span{font-family:inherit;font-size:.9rem;letter-spacing:0;text-transform:none;color:var(--ez-text)}
+.ez-hp{position:absolute;left:-9999px;opacity:0;height:0;width:0}
+.ez-form-fuss{display:flex;align-items:center;gap:1rem;margin-top:1.2rem;flex-wrap:wrap}
+.ez-form-fuss .btn-dark{background:var(--ez-akzent);border-color:var(--ez-akzent);color:#fff}
+.ez-form-stand{font-size:.85rem;color:var(--ez-leise)}
+.ez-form-stand.ist-fehler{color:var(--ez-rot,#B4443C)}
+.ez-form-danke{max-width:760px;margin:0 auto;padding:1rem 1.2rem;border-radius:12px;background:var(--ez-gruen-hell,#EAF2ED);color:var(--ez-gruen,#2F6B4F)}
+.ezblock[data-hg="dunkel"] .ez-f > span,.ezblock[data-hg="akzent"] .ez-f > span,.ezblock[data-hg="dunkel"] .ez-f-haken > span,.ezblock[data-hg="akzent"] .ez-f-haken > span{color:rgba(255,255,255,.75)}
+@media (max-width:640px){ .ez-form-felder{grid-template-columns:1fr}}
+
+/* ---- Website-Design: Kopfzeile, Menue, Fusszeile, Animationen ---- */
+html[data-kopf="mitlaufend"] .gnav{position:relative}
+html[data-kopfeffekt="glas"] .gnav{background:rgba(255,255,255,.72);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px)}
+html[data-kopfeffekt="schatten"] .gnav{border-bottom:0;box-shadow:0 6px 24px -12px rgba(25,22,62,.35)}
+html[data-kopfeffekt="transparent"] .gnav{position:absolute;left:0;right:0;top:0;background:transparent;border-bottom:0}
+html[data-kopfeffekt="transparent"] .gnav .wm b,html[data-kopfeffekt="transparent"] .gnav .wm span,
+html[data-kopfeffekt="transparent"] .navlinks a{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
+html[data-kopfeffekt="transparent"] .navlinks .navcta{border-color:#fff}
+html[data-kopfeffekt="transparent"] .navlinks .navcta:hover{background:#fff;color:var(--ez-akzent)}
+html[data-kopfeffekt="transparent"] .burger span{background:#fff}
+html[data-kopfeffekt="transparent"] body:not(:has(.home-hero)) .gnav{position:relative;background:var(--ez-weiss)}
+html[data-kopfeffekt="transparent"] body:not(:has(.home-hero)) .navlinks a,
+html[data-kopfeffekt="transparent"] body:not(:has(.home-hero)) .gnav .wm b{color:var(--ez-text);text-shadow:none}
+/* Menue */
+html[data-menuausricht="mitte"] .navlinks{margin:0 auto}
+html[data-menuausricht="links"] .navlinks{margin-left:1.6rem;margin-right:auto}
+html[data-menuausricht="mitte"] .burger,html[data-menuausricht="links"] .burger{margin-left:auto}
+html[data-menugroesse="klein"] .navlinks a{font-size:.64rem;letter-spacing:.12em}
+html[data-menugroesse="gross"] .navlinks a{font-size:.88rem;letter-spacing:.1em}
+html[data-menugross="aus"] .navlinks a{text-transform:none;letter-spacing:.03em;font-family:var(--ez-textschrift);font-weight:500}
+@media (max-width:900px){
+  html[data-burgerstil="dunkel"] .navlinks{background:var(--ez-tinte);border-top-color:rgba(255,255,255,.12)}
+  html[data-burgerstil="akzent"] .navlinks{background:var(--ez-akzent);border-top-color:rgba(255,255,255,.12)}
+  html[data-burgerstil="dunkel"] .navlinks a,html[data-burgerstil="akzent"] .navlinks a{color:#fff !important;border-bottom-color:rgba(255,255,255,.12)}
+  html[data-burgerstil="dunkel"] .navlinks .navcta,html[data-burgerstil="akzent"] .navlinks .navcta{border-color:#fff !important;color:#fff !important}
+  html[data-menugross="aus"] .navlinks a{font-size:1rem}
+  html[data-menugroesse="gross"] .navlinks a{font-size:1rem}}
+/* Kopfzeile: Hoehe, Logo, Linie, Farbe */
+html[data-kopfhoehe="kompakt"] .gnav-inner{padding-top:.45rem;padding-bottom:.45rem}
+html[data-kopfhoehe="hoch"] .gnav-inner{padding-top:1.6rem;padding-bottom:1.6rem}
+html[data-logogroesse="klein"] .logo .ezimg{height:26px}
+html[data-logogroesse="gross"] .logo .ezimg{height:48px}
+html[data-logogroesse="gross"] .logo .wm b{font-size:1.15rem}
+html[data-kopflinie="aus"] .gnav{border-bottom-color:transparent}
+html[data-kopfeffekt="glas"] .gnav{background:color-mix(in srgb,var(--kopffarbe,#fff) 74%,transparent)}
+/* Menue: wie die aktuelle Seite markiert wird */
+html[data-menuaktiv="keine"] .navlinks a.on{border-bottom:0;padding-bottom:0}
+html[data-menuaktiv="fett"] .navlinks a.on{border-bottom:0;padding-bottom:0;font-weight:700}
+/* Handy-Menue: Ausrichtung und Groesse */
+@media (max-width:900px){
+  html[data-burgerausricht="mitte"] .navlinks a{text-align:center}
+  html[data-burgergroesse="gross"] .navlinks a{font-size:1.05rem;padding-top:1.2rem;padding-bottom:1.2rem}
+  html[data-burgergroesse="gross"][data-menugross="aus"] .navlinks a{font-size:1.15rem}}
+/* Fusszeile: Aufteilung */
+html[data-fusslayout="zwei"] .sf-inner{grid-template-columns:1fr 1fr}
+html[data-fusslayout="zentriert"] .sf-inner{grid-template-columns:1fr;text-align:center;max-width:720px;gap:1.6rem}
+html[data-fusslayout="zentriert"] .sf-logo{margin-left:auto;margin-right:auto}
+html[data-fusslayout="zentriert"] .sf-base{text-align:center}
+@media (max-width:520px){ html[data-fusslayout="zwei"] .sf-inner{grid-template-columns:1fr}}
+/* Animationen beim Scrollen (nicht im Editor) */
+
+/* Video als Hintergrund (etwa im Kopf der Startseite) */
+.ez-bgvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+[data-ez-bg]:has(> .ez-bgvideo){overflow:hidden}
+body:not(.ez-edit) .ez-versteckt{display:none !important}
+.ez-anker{display:block;height:0;position:relative}
+html:has(> body.guestpage:not(.ez-edit)){scroll-behavior:smooth}
+
+/* ---- Animationen (Website-Design -> Animationen) ----
+   Die Laufzeit setzt data-ez-anim an Abschnitte, Bilder, Ueberschriften und
+   Buttons und "ist-sichtbar", sobald sie ins Bild kommen. Im Editor ruhig. */
+body:not(.ez-edit) [data-ez-anim]{transition:opacity var(--ez-anim-dauer,.95s) ease,transform var(--ez-anim-dauer,.95s) cubic-bezier(.2,.7,.2,1),
+  filter var(--ez-anim-dauer,.95s) ease,clip-path calc(var(--ez-anim-dauer,.95s) * 1.3) cubic-bezier(.6,0,.2,1);transition-delay:var(--ez-anim-verz,0s)}
+body:not(.ez-edit) [data-ez-anim="einblenden"]:not(.ist-sichtbar){opacity:0}
+body:not(.ez-edit) [data-ez-anim="hochschieben"]:not(.ist-sichtbar){opacity:0;transform:translateY(34px)}
+body:not(.ez-edit) [data-ez-anim="zoom"]:not(.ist-sichtbar){opacity:0;transform:scale(.93)}
+body:not(.ez-edit) [data-ez-anim="links"]:not(.ist-sichtbar){opacity:0;transform:translateX(-56px)}
+body:not(.ez-edit) [data-ez-anim="rechts"]:not(.ist-sichtbar){opacity:0;transform:translateX(56px)}
+body:not(.ez-edit) [data-ez-anim="weich"]:not(.ist-sichtbar){opacity:0;filter:blur(16px)}
+body:not(.ez-edit) [data-ez-anim="enthuellen"]:not(.ist-sichtbar){clip-path:inset(0 0 100% 0)}
+body:not(.ez-edit) [data-ez-anim="enthuellen"].ist-sichtbar{clip-path:inset(0 0 0 0)}
+/* Wort fuer Wort */
+body:not(.ez-edit) [data-ez-anim="woerter"] .ez-wort{display:inline-block;transition:opacity var(--ez-anim-dauer,.95s) ease,transform var(--ez-anim-dauer,.95s) cubic-bezier(.2,.7,.2,1);
+  transition-delay:calc(var(--ez-anim-verz,0s) + var(--ez-wort,0) * 70ms)}
+body:not(.ez-edit) [data-ez-anim="woerter"]:not(.ist-sichtbar) .ez-wort{opacity:0;transform:translateY(.45em)}
+/* Startbilder */
+@keyframes ez-kenburns{0%{transform:scale(1) translate3d(0,0,0)}100%{transform:scale(1.14) translate3d(-2%,-1.5%,0)}}
+@keyframes ez-heranzoom{from{transform:scale(1.18)}to{transform:scale(1)}}
+@keyframes ez-auftauchen{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
+html[data-heroanim="kenburns"] body:not(.ez-edit) .ez-hero-ebene{animation:ez-kenburns 26s ease-in-out infinite alternate}
+html[data-heroanim="zoomin"] body:not(.ez-edit) .ez-hero-ebene{animation:ez-heranzoom 2.6s cubic-bezier(.2,.7,.2,1) both}
+html[data-heroanim="einblenden"] body:not(.ez-edit) .ez-hero-ebene{animation:ez-auftauchen 1.8s ease both}
+/* Buttons beim Darueberfahren */
+html[data-knopfhover="anheben"] body:not(.ez-edit) [data-ez-knopf]{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,background .2s,color .2s}
+html[data-knopfhover="anheben"] body:not(.ez-edit) [data-ez-knopf]:hover{transform:translateY(-3px);box-shadow:0 12px 26px -12px rgba(0,0,0,.45)}
+html[data-knopfhover="glanz"] body:not(.ez-edit) [data-ez-knopf]{position:relative;overflow:hidden}
+html[data-knopfhover="glanz"] body:not(.ez-edit) [data-ez-knopf]::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s ease}
+html[data-knopfhover="glanz"] body:not(.ez-edit) [data-ez-knopf]:hover::after{transform:translateX(120%)}
+html[data-knopfhover="fuellen"] body:not(.ez-edit) [data-ez-knopf]{background-image:linear-gradient(var(--ez-akzent),var(--ez-akzent));background-repeat:no-repeat;
+  background-size:0 100%;transition:background-size .35s ease,color .25s}
+html[data-knopfhover="fuellen"] body:not(.ez-edit) [data-ez-knopf]:hover{background-size:100% 100%;color:#fff}
+@media (prefers-reduced-motion:reduce){
+  [data-ez-anim],[data-ez-anim] .ez-wort{opacity:1 !important;transform:none !important;filter:none !important;clip-path:none !important}
+  .ez-hero-ebene{animation:none !important}
+}
+
+/* ============ 2. Bearbeiten im Editor-Rahmen ============ */
+/* Im Editor liegen die Bilder eines Sliders nebeneinander, damit jedes
+   einzeln getauscht werden kann. */
+body.ez-edit .ez-slider{overflow-x:auto;background:var(--ezui-flaeche)}
+body.ez-edit .ez-slides{display:flex !important;gap:.5rem;padding:.5rem;transform:none !important}
+body.ez-edit .ez-slides > *{flex:0 0 min(46%,420px);opacity:1 !important;aspect-ratio:16/9}
+body.ez-edit .ez-slider::before{content:"Slider – auf der Website wechseln die Bilder automatisch";
+  display:block;padding:.5rem .8rem 0;font:600 .62rem/1 var(--ezui-mono);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ezui-leise)}
+body.ez-edit .ez-unterschrift{display:block;opacity:.55}
+body.ez-edit .ezblock[data-unterschrift="1"] .ez-unterschrift{opacity:1}
+body.ez-edit .ezblock-trenner{outline:1px dashed var(--ezui-linie-2);outline-offset:-1px}
+body.ez-edit .ezblock{min-height:1.5rem}
+body.navopen .ez-plus,body.navopen .ez-hover-marke{display:none !important}
+body.ez-edit .ez-einbettung iframe{pointer-events:none}
+body.ez-edit .ez-form-danke{display:block !important;opacity:.6}
+body.ez-edit .ez-form-danke::before{content:"Dankestext nach dem Absenden: ";font-family:var(--ezui-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:.2rem}
+body.ez-edit .ez-f input,body.ez-edit .ez-f select,body.ez-edit .ez-f textarea{pointer-events:none;background:var(--ezui-flaeche-2)}
+/* Rahmen: Tauschen-Knopf */
+.ez-rahmen .ez-tausch{display:inline-flex;align-items:center;padding:0 .55rem;border:0;background:var(--ezui-gold,#B08D57);
+  color:#fff;border-radius:7px;cursor:pointer;font:600 .6rem/1 var(--ezui-font);letter-spacing:.06em;text-transform:uppercase}
+.ez-rahmen .ez-tausch:hover{background:#8f7043}
+.ez-rahmen .ez-tausch[hidden]{display:none}
+.ez-rahmen .ez-bearbeiten{display:inline-flex;align-items:center;padding:0 .6rem;border:0;background:var(--ezui-tint);
+  color:#fff;font-size:.66rem;font-weight:600;letter-spacing:.06em;cursor:pointer;pointer-events:auto;white-space:nowrap}
+.ez-rahmen .ez-bearbeiten:hover{background:#2a2566}
+.ez-rahmen .ez-bearbeiten[hidden],.ez-rahmen .ez-greifer[hidden],.ez-rahmen .ez-punkt[hidden]{display:none}
+.ez-rahmen.ez-innen .ez-leiste{top:3px;left:3px}
+
+/* ---------- Auswahlrahmen im Editor ----------
+   Ein Rahmen mit den ueblichen acht Punkten. Er liegt ueber der Seite,
+   laesst aber alles durch, was nicht Punkt oder Greifer ist - so bleibt
+   der Text darunter anklickbar und tippbar. */
+.ez-rahmen{position:absolute;z-index:9998;pointer-events:none;
+  outline:1px solid var(--ezui-tint);outline-offset:1px;border-radius:2px}
+.ez-rahmen .ez-punkt{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;
+  background:#fff;border:1.5px solid var(--ezui-tint);border-radius:3px;pointer-events:auto;
+  box-shadow:0 1px 3px rgba(25,22,62,.3)}
+.ez-rahmen .ez-nw{top:0;left:0}
+.ez-rahmen .ez-n{top:0;left:50%}
+.ez-rahmen .ez-ne{top:0;left:100%}
+.ez-rahmen .ez-e{top:50%;left:100%}
+.ez-rahmen .ez-se{top:100%;left:100%}
+.ez-rahmen .ez-s{top:100%;left:50%}
+.ez-rahmen .ez-sw{top:100%;left:0}
+.ez-rahmen .ez-w{top:50%;left:0}
+.ez-rahmen .ez-leiste{position:absolute;top:-30px;left:-1px;display:flex;align-items:stretch;gap:2px;
+  height:26px;pointer-events:auto;white-space:nowrap}
+.ez-rahmen .ez-greifer{display:inline-flex;align-items:center;gap:.35rem;padding:0 .55rem 0 .4rem;
+  background:var(--ezui-tint);color:#fff;border-radius:7px;cursor:grab;user-select:none;
+  font:600 .6rem/1 var(--ezui-font);letter-spacing:.06em;text-transform:uppercase}
+.ez-rahmen .ez-greifer svg{width:15px;height:15px}
+.ez-rahmen .ez-greifer:hover{background:var(--ezui-text)}
+.ez-rahmen .ez-greifer:active{cursor:grabbing}
+.ez-rahmen .ez-marke{display:inline-flex;align-items:center;padding:0 .5rem;
+  background:#fff;color:var(--ezui-tint);border:1px solid var(--ezui-tint);border-radius:7px;font-family:var(--ezui-mono);
+  font-size:.55rem;letter-spacing:.12em;text-transform:uppercase}
+.ez-rahmen .ez-weg{display:inline-flex;align-items:center;justify-content:center;width:28px;border:0;
+  background:var(--ezui-rot,#B4443C);color:#fff;border-radius:7px;cursor:pointer;padding:0}
+.ez-rahmen .ez-weg svg{width:15px;height:15px}
+.ez-rahmen .ez-weg:hover{background:#8e2f29}
+.ez-rahmen.ez-ausgeblendet .ez-weg{background:var(--ezui-gruen,#2F6B4F)}
+/* Plus-Leisten zwischen den Abschnitten (nur im Editor) */
+.ez-plus{position:relative;height:0;z-index:50;pointer-events:none}
+.ez-plus::before{content:"";position:absolute;left:0;right:0;top:0;border-top:2px dashed rgba(25,22,62,.18);
+  transition:border-color .15s}
+.ez-plus-knopf{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);width:30px;height:30px;
+  border-radius:50%;border:2px solid var(--ezui-tint);background:#fff;color:var(--ezui-tint);font-size:1.25rem;
+  line-height:1;cursor:pointer;pointer-events:auto;display:grid;place-items:center;padding:0;
+  box-shadow:0 2px 8px rgba(25,22,62,.2);transition:transform .15s,background .15s,color .15s}
+.ez-plus-knopf:hover{background:var(--ezui-tint);color:#fff;transform:translate(-50%,-50%) scale(1.12)}
+.ez-plus-text{position:absolute;left:calc(50% + 22px);top:0;transform:translateY(-50%);
+  font:600 .6rem/1 var(--ezui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--ezui-tint);
+  background:#fff;padding:.3rem .5rem;border-radius:6px;opacity:0;transition:opacity .15s;pointer-events:none;
+  box-shadow:0 2px 8px rgba(25,22,62,.15);white-space:nowrap}
+.ez-plus:hover::before{border-color:var(--ezui-tint)}
+.ez-plus:hover .ez-plus-text{opacity:1}
+.ez-plus:hover{pointer-events:auto}
+/* Blockauswahl an der Leiste */
+.ez-blockwahl{position:absolute;left:50%;top:22px;transform:translateX(-50%);z-index:60;width:min(30rem,calc(100vw - 2rem));
+  background:#fff;border:1px solid var(--ezui-linie);border-radius:14px;box-shadow:var(--ezui-schatten);padding:.7rem;
+  pointer-events:auto;font-family:var(--ezui-font)}
+.ez-blockwahl-kopf{font:600 .62rem/1 var(--ezui-font);letter-spacing:.12em;text-transform:uppercase;color:var(--ezui-leise);
+  padding:.2rem .3rem .6rem}
+.ez-blockwahl-raster{display:grid;grid-template-columns:repeat(5,1fr);gap:.35rem}
+.ez-blockwahl-raster button{border:1px solid var(--ezui-linie);border-radius:9px;background:var(--ezui-weiss);padding:.55rem .2rem;
+  font:500 .7rem/1.2 var(--ezui-font);color:var(--ezui-text);cursor:pointer;transition:border-color .12s,background .12s}
+.ez-blockwahl-raster button:hover{border-color:var(--ezui-tint);background:var(--ezui-tint-hell)}
+
+/* Hover: zeigen, was anklickbar ist */
+body.ez-edit .ez-hover{outline:2px solid rgba(25,22,62,.45) !important;outline-offset:2px;cursor:pointer}
+body.ez-edit .ezblock.ez-hover{outline-offset:-2px}
+.ez-hover-marke{position:absolute;z-index:9997;pointer-events:none;background:rgba(25,22,62,.85);color:#fff;
+  font:600 .58rem/1 var(--ezui-font);letter-spacing:.1em;text-transform:uppercase;padding:.3rem .5rem;border-radius:6px;
+  transform:translateY(-100%);margin-top:-6px;white-space:nowrap}
+.ez-hover-marke[hidden]{display:none}
+/* Abschnitt wird gezogen */
+body.ez-zieht-abschnitt{cursor:grabbing}
+.ez-wird-gezogen{outline:3px dashed var(--ezui-tint) !important;outline-offset:-3px;opacity:.85}
+body.ez-zieht-abschnitt .ez-plus{display:none}
+/* Rechtsklickmenue: Gruppen, Kuerzel, Farbreihe */
+.ez-menue{max-height:min(80vh,720px);overflow:auto;min-width:17rem}
+.ez-menue-kopf{font:600 .56rem/1 var(--ezui-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ezui-leise);
+  padding:.55rem .6rem .25rem}
+.ez-menue > button{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.ez-menue kbd{font:500 .6rem/1 var(--ezui-mono);color:var(--ezui-leise);background:var(--ezui-flaeche);padding:.2rem .35rem;border-radius:4px}
+.ez-menue-farben{display:flex;gap:.35rem;padding:.2rem .6rem .45rem}
+.ez-menue-farben button{width:20px;height:20px;border-radius:50%;border:2px solid var(--ezui-linie-2);padding:0;cursor:pointer}
+.ez-menue-farben button.ist-aktiv{border-color:var(--ezui-tint);box-shadow:0 0 0 2px #fff,0 0 0 3px var(--ezui-tint)}
+
+/* Ausgeblendete Elemente: im Editor blass, auf der Website weg */
+body.ez-edit .ez-versteckt{opacity:.3;outline:1px dashed var(--ezui-rot,#B4443C);outline-offset:2px}
+body.ez-zieht{cursor:grabbing;user-select:none}
+body.ez-zieht *{pointer-events:none}
+body.ez-zieht .ez-rahmen,body.ez-zieht .ez-rahmen *{pointer-events:auto}
+
+/* Hilfslinien beim Verschieben */
+.ez-linien{position:fixed;inset:0;pointer-events:none;z-index:9997}
+.ez-linie{position:absolute;background:#E0457B;opacity:.9}
+.ez-linie.sk{top:0;width:1px;height:100%}
+.ez-linie.wa{left:0;height:1px;width:100%}
+
+/* Rechtsklickmenue im Editor */
+.ez-menue{position:absolute;z-index:9999;min-width:15rem;padding:.3rem;background:#fff;
+  border:1px solid var(--ezui-linie);border-radius:10px;box-shadow:var(--ezui-schatten)}
+.ez-menue button{display:block;width:100%;text-align:left;border:0;background:transparent;
+  padding:.42rem .6rem;border-radius:7px;font-family:var(--ezui-font);font-size:.83rem;
+  color:var(--ezui-text);cursor:pointer}
+.ez-menue button:hover{background:var(--ezui-tint-hell);color:var(--ezui-tint)}
+.ez-menue hr{border:0;border-top:1px solid var(--ezui-linie);margin:.25rem .3rem}
+
+/* ---------- Bearbeiten-Modus auf der Website selbst ---------- */
+.ez-edit [data-ez]{
+  outline:1px dashed rgba(25,22,62,.28); outline-offset:3px; border-radius:2px;
+  transition:outline-color .15s ease, background .15s ease;
+}
+.ez-edit [data-ez]:hover{outline-color:var(--ezui-tint);background:rgba(25,22,62,.04)}
+.ez-edit [data-ez]:focus{outline:2px solid var(--ezui-tint);outline-offset:3px;background:rgba(25,22,62,.05)}
+/* Achtung: hier kein position - die Hintergrundebene des Heros liegt
+   absolut und waere sonst null Pixel hoch. */
+.ez-edit .ez-bild{cursor:pointer}
+.ez-edit img.ez-bild:hover{outline:2px solid var(--ezui-tint);outline-offset:2px}
+.ez-edit div.ez-bild:hover{box-shadow:inset 0 0 0 3px var(--ezui-tint)}
+
+/* ---------- Bearbeiten: ein Modus fuer Text, Lage und Groesse ----------
+   Beim Darueberfahren zeigt eine feine Linie, was anfassbar ist. */
+.ez-edit [data-ez]:hover,.ez-edit [data-ez-img]:hover,.ez-edit [data-ez-bg]:hover{
+  outline:1px dashed rgba(25,22,62,.35);outline-offset:2px}
+body.ez-edit .ez-anker::after{content:"# " attr(id);position:absolute;top:6px;left:8px;z-index:5;
+  font-family:var(--ezui-mono);font-size:.62rem;letter-spacing:.06em;color:var(--ezui-tint);background:var(--ezui-tint-hell);
+  border:1px solid var(--ezui-tint-linie);border-radius:99px;padding:.15rem .5rem;pointer-events:none;white-space:nowrap}
+
+/* ---- Apple-Schicht fuer das Bearbeiten im Rahmen ---- */
+.ez-rahmen{outline:2px solid var(--ezui-tint);outline-offset:2px;border-radius:3px}
+.ez-rahmen .ez-leiste{top:-40px;left:-2px;gap:1px;padding:3px;height:auto;border-radius:10px;align-items:center;
+  background:rgba(29,29,31,.88);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  box-shadow:0 8px 24px -8px rgba(0,0,0,.45),0 0 0 .5px rgba(255,255,255,.08) inset;font-family:var(--ezui-font)}
+.ez-rahmen .ez-leiste > *{height:28px;border-radius:7px;background:transparent;color:#fff;font:600 11.5px/1 var(--ezui-font);
+  letter-spacing:0;text-transform:none;padding:0 .6rem;border:0;display:inline-flex;align-items:center;gap:.35rem}
+.ez-rahmen .ez-leiste > *:hover{background:rgba(255,255,255,.14)}
+.ez-rahmen .ez-leiste svg{width:15px;height:15px;flex:none}
+.ez-rahmen .ez-greifer{background:var(--ezui-tint)}
+.ez-rahmen .ez-greifer:hover{background:#0077ed}
+.ez-rahmen .ez-marke{color:rgba(255,255,255,.62);font-weight:500;pointer-events:none}
+.ez-rahmen .ez-marke:hover{background:transparent}
+.ez-rahmen .ez-tausch,.ez-rahmen .ez-bearbeiten{background:transparent}
+.ez-rahmen .ez-schnitt{padding:0 .5rem}
+.ez-rahmen .ez-weg{color:#ff453a;width:30px;justify-content:center;padding:0}
+.ez-rahmen .ez-weg:hover{background:rgba(255,69,58,.22)}
+.ez-rahmen.ez-ausgeblendet .ez-weg{color:#30d158;background:transparent}
+.ez-rahmen.ez-innen .ez-leiste{top:6px;left:6px}
+.ez-rahmen .ez-punkt{width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;border:1.5px solid var(--ezui-tint);
+  box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.ez-hover-marke{font:600 11px/1 var(--ezui-font);background:var(--ezui-tint);color:#fff;border-radius:6px;padding:4px 7px;letter-spacing:0;text-transform:none}
+body.ez-edit .ez-hover{outline:1.5px solid rgba(0,113,227,.55);outline-offset:2px}
+/* Rechtsklick wie ein macOS-Menue */
+.ez-menue{font:13px/1.3 var(--ezui-font);letter-spacing:0;background:rgba(246,246,248,.9);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
+  border:0;border-radius:11px;padding:5px;box-shadow:0 12px 36px -8px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.14);min-width:236px}
+.ez-menue > button,.ez-menue button{font:13px/1.3 var(--ezui-font);color:#1d1d1f;border-radius:6px;padding:.32rem .6rem;text-transform:none;letter-spacing:0}
+.ez-menue > button:hover,.ez-menue button:hover{background:var(--ezui-tint);color:#fff}
+.ez-menue > button:hover kbd{color:rgba(255,255,255,.8)}
+.ez-menue-kopf{font:600 11px/1 var(--ezui-font);color:#8e8e93;text-transform:none;letter-spacing:0;padding:.55rem .6rem .3rem}
+.ez-menue kbd{font:12px var(--ezui-font);color:#8e8e93;background:none;border:0}
+.ez-menue-farben button{border-radius:50%}
+.ez-menue-farben button:hover{background:inherit;transform:scale(1.12)}
+.ez-plus-knopf{background:#fff;color:var(--ezui-tint);border-color:var(--ezui-tint);box-shadow:0 2px 8px -2px rgba(0,113,227,.4)}
+.ez-plus-knopf:hover{background:var(--ezui-tint);color:#fff}
+.ez-blockwahl{border-radius:14px;border:0;box-shadow:var(--ezui-schatten);font-family:var(--ezui-font)}
+.ez-blockwahl-raster button{border-radius:10px;font-family:var(--ezui-font)}

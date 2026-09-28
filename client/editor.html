@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{titel}}</title>
+<meta name="theme-color" content="#f5f5f7">
+<link rel="stylesheet" href="/builder/editor.css">
+<link rel="icon" href="{{icon}}">
+</head>
+<body class="sitedit" data-login="{{login}}">
+
+<header class="edit-top">
+  <a class="btn btn-sm" href="{{zurueckLink}}">‹ {{zurueckText}}</a>
+
+  <div class="et-title">
+    <select class="tsel et-pagesel" id="etPageSel" title="Seite wählen">
+      <option value="">Seite wählen …</option>
+    </select>
+    <b id="etPage" hidden>Website</b>
+    <span id="etState">bereit</span>
+  </div>
+
+  <span class="et-platz"></span>
+
+  <!-- Ansicht -->
+  <div class="seg et-seg" id="etDevice">
+    <button type="button" data-dev="desktop" aria-pressed="true" title="Große Ansicht">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="2.5" y="4" width="19" height="13" rx="2"></rect><path d="M9 20.5h6"></path></svg>
+    </button>
+    <button type="button" data-dev="mobil" aria-pressed="false" title="Handy-Ansicht">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect><path d="M11 18.8h2"></path></svg>
+    </button>
+  </div>
+
+  <div class="et-actions">
+    <span class="seg et-seg et-verlauf">
+      <button type="button" id="etUndo" title="Rückgängig (⌘/Strg + Z)" aria-label="Rückgängig" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      </button>
+      <button type="button" id="etRedo" title="Wiederholen (⌘/Strg + Shift + Z)" aria-label="Wiederholen" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
+      </button>
+    </span>
+    <button class="btn btn-sm btn-ghost" id="etHilfe" type="button" title="Kurze Anleitung">? Hilfe</button>
+    <button class="btn btn-sm" id="etPreview" type="button">Vorschau</button>
+    <button class="btn btn-sm" id="etReload" type="button">Verwerfen</button>
+    <button class="btn btn-sm ruht" id="etSave" type="button">Speichern</button>
+  </div>
+</header>
+
+<div class="edit-wrap">
+  <aside class="edit-side" id="etSide">
+    <!-- Zwei klar getrennte Bereiche: diese Seite bearbeiten / Website-Design -->
+    <nav class="seg es-tabs" id="etSideTabs">
+      <button type="button" data-tab="seite" aria-pressed="true">Diese Seite</button>
+      <button type="button" data-tab="design" aria-pressed="false">Website-Design</button>
+    </nav>
+
+    <div class="es-pane" data-tab="seite">
+    <!-- Hinzufuegen -->
+    <div class="es-head">Hinzufügen</div>
+    <div class="es-kacheln" id="etKacheln">
+      <button type="button" data-art="ueberschrift" title="Zwischenüberschrift">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5v14M19 5v14M5 12h14"/></svg><span>Überschrift</span></button>
+      <button type="button" data-art="text" title="Absatz Fließtext">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h11M4 18h7"/></svg><span>Text</span></button>
+      <button type="button" data-art="button" title="Knopf mit Verlinkung">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M8 12h8"/></svg><span>Button</span></button>
+      <button type="button" data-art="bild" title="Foto in voller Breite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg><span>Bild</span></button>
+      <button type="button" data-art="video" title="Kurzer Clip, stumm in Schleife">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg><span>Video</span></button>
+      <button type="button" data-art="galerie" title="Raster, Mosaik oder Slider">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg><span>Galerie</span></button>
+      <button type="button" data-art="spalten" title="Text und Bild nebeneinander">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h7M4 11h7M4 15h5"/><rect x="13" y="5" width="8" height="14" rx="1.5"/></svg><span>Zwei Spalten</span></button>
+      <button type="button" data-art="zitat" title="Zitat mit Urheber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6c0 2-1 3-3 4M18 15h-3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6c0 2-1 3-3 4"/></svg><span>Zitat</span></button>
+      <button type="button" data-art="trenner" title="Abstand oder Linie">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12h16M8 6h8M8 18h8"/></svg><span>Trenner</span></button>
+      <button type="button" data-art="formular" title="Formular mit eigenen Feldern – Eingaben kommen per E-Mail">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M3 20h9"/></svg><span>Formular</span></button>
+      <button type="button" data-art="einbettung" title="YouTube oder Vimeo einbetten">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.5s-.2-1.6-.9-2.3c-.8-.9-1.8-.9-2.2-1C15.8 5 12 5 12 5s-3.8 0-6.9.2c-.4.1-1.4.1-2.2 1C2.2 6.9 2 8.5 2 8.5S1.8 10.4 1.8 12.3v1.7c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.8.9 1.9.9 2.4 1 1.8.2 6.7.2 6.7.2s3.8 0 6.9-.2c.4-.1 1.4-.1 2.2-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8v-1.7c0-1.9-.2-3.8-.2-3.8Z"/><path d="m10 9.5 5 2.8-5 2.8z"/></svg><span>YouTube</span></button>
+    </div>
+
+    <!-- Gewaehltes Element -->
+    <div class="es-head" style="margin-top:1rem">Element</div>
+    <div class="es-element" id="etElement">
+      <p class="es-leer">Nichts gewählt – auf der Seite ein Element anklicken.</p>
+    </div>
+
+    <!-- Medien -->
+    <div class="es-head" style="margin-top:1rem">Medien</div>
+    <button class="btn btn-sm" type="button" id="etMedien" style="align-self:flex-start">Bilder &amp; Videos verwalten</button>
+
+    <p class="es-hint">Anklicken und lostippen. Am Rahmen: <b>Verschieben</b> zum Ziehen, Punkte zum Verformen,
+       <b>Tauschen</b> für Bilder, rotes Symbol zum Löschen. Das <b>+</b> zwischen zwei Abschnitten fügt dort
+       einen neuen ein. Rechte Maustaste öffnet das Schnellmenü.</p>
+    </div>
+
+    <div class="es-pane es-pane-design" data-tab="design" hidden>
+      <div class="es-design-kopf">
+        <b>Website-Design</b>
+        <span>Gilt für <u>alle Seiten</u> gleichzeitig – Schriften, Farben, Kopf- und Fußzeile, Menü, Animationen.</span>
+      </div>
+      <div class="es-nd">
+        <b>Kopfzeile, Menü &amp; Fußzeile</b>
+        <span>Menü-Einträge, Verhalten und Aussehen der Kopfzeile, das Handy-Menü und die Fußzeile – alles in einem Fenster.</span>
+        <div class="es-nd-knoepfe">
+          <button type="button" data-nd-tab="eintraege">Menü-Einträge</button>
+          <button type="button" data-nd-tab="kopf">Kopfzeile</button>
+          <button type="button" data-nd-tab="handy">Handy-Menü</button>
+          <button type="button" data-nd-tab="fuss">Fußzeile</button>
+        </div>
+      </div>
+    <!-- Website-Design: gilt fuer alle Seiten -->
+    <div class="es-design" id="etDesign"><p class="es-leer">Lädt …</p></div>
+
+    </div>
+  </aside>
+
+  <main class="edit-main" id="etMain">
+    <!-- Grosse Ansicht -->
+    <div class="edit-frame" id="etDesk">
+      <div class="scaler" id="etScaler"><iframe id="etFrame" title="Vorschau" src="about:blank"></iframe></div>
+      <div class="edit-busy" id="etBusy" hidden><span></span></div>
+    </div>
+
+    <!-- Handy-Ansicht im Mockup -->
+    <div class="phonewrap" id="etPhone" hidden>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen"><iframe id="etFrameM" title="Vorschau Handy" src="about:blank"></iframe></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ Bildauswahl ============ -->
+<div class="sheet-backdrop" id="imgBack"></div>
+<div class="sheet sheet-wide" id="imgSheet" role="dialog" aria-modal="true" aria-labelledby="imgTitle">
+  <div class="sheet-head">
+    <h2 id="imgTitle">Bild auswählen</h2>
+    <button class="btn btn-icon btn-ghost" id="imgClose" aria-label="Schließen">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="uploadzeile">
+      <label class="uploadbox" for="imgFile">
+        <b>Neues Bild hochladen</b>
+        <span>JPG, PNG oder WebP – wird automatisch auf Webgröße gebracht</span>
+        <input type="file" id="imgFile" accept="image/jpeg,image/png,image/webp" hidden>
+      </label>
+      <label class="uploadbox" for="vidFile" id="vidBox">
+        <b>Video hochladen</b>
+        <span>MP4 (H.264) empfohlen · WebM, MOV · höchstens 40 MB · läuft stumm in Schleife</span>
+        <input type="file" id="vidFile" accept="video/mp4,video/webm,video/quicktime" hidden>
+      </label>
+    </div>
+    <p class="mut" id="imgMsg" style="min-height:1.2em;margin:0"></p>
+    <div class="steplabel" id="vidTitel" hidden>Videos</div>
+    <div class="imggrid vidgrid" id="vidGrid" hidden></div>
+    <div class="steplabel" id="imgTitel">Bilder</div>
+    <div class="imggrid" id="imgGrid"></div>
+  </div>
+</div>
+
+<!-- ============ Link einfügen ============ -->
+<div class="sheet-backdrop" id="linkBack"></div>
+<div class="sheet" id="linkSheet" role="dialog" aria-modal="true" aria-labelledby="linkTitle">
+  <div class="sheet-head">
+    <h2 id="linkTitle">Link einfügen</h2>
+    <button class="btn btn-icon btn-ghost" id="linkClose" aria-label="Schließen">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label for="linkZiel">Seite oder Sprungmarke wählen</label>
+      <select class="input" id="linkZiel"></select>
+    </div>
+    <div class="field">
+      <label for="linkUrl">Adresse</label>
+      <input class="input" id="linkUrl" placeholder="https://… oder /reservierung">
+    </div>
+    <p class="mut" style="margin:0">Interne Seiten mit Schrägstrich, z. B. <b>/kontakt</b> – Sprungmarken als <b>/seite#anker</b>.
+       E-Mail mit <b>mailto:</b> davor.</p>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-primary" type="button" id="linkOk">Einfügen</button>
+    <button class="btn" type="button" id="linkCancel">Abbrechen</button>
+    <button class="btn btn-sm" type="button" id="linkOff" style="margin-left:auto">Link entfernen</button>
+  </div>
+</div>
+
+<!-- ============ Kopfzeile, Menü & Fußzeile ============ -->
+<div class="sheet nd" id="navSheet" role="dialog" aria-labelledby="navTitle">
+  <div class="nd-kopf">
+    <div class="sheet-head" id="navGriff">
+      <h2 id="navTitle">Kopfzeile, Menü &amp; Fußzeile</h2>
+      <span class="nd-global" title="Diese Einstellungen gelten auf jeder Seite der Website">alle Seiten</span>
+      <button class="btn btn-icon btn-ghost" id="navClose" aria-label="Schließen" type="button">✕</button>
+    </div>
+    <div class="nd-tabs" id="navTabs">
+      <button type="button" data-nt="eintraege" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Menü-Einträge</button>
+      <button type="button" data-nt="kopf" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h2"/></svg>Kopfzeile</button>
+      <button type="button" data-nt="handy" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10 8h4M10 11h4M10 14h4"/></svg>Handy-Menü</button>
+      <button type="button" data-nt="fuss" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15h18M7 17.5h2M12 17.5h2"/></svg>Fußzeile</button>
+    </div>
+  </div>
+  <div class="nd-body" id="navBody"></div>
+  <div class="nd-fuss">
+    <p class="mut">Jede Änderung erscheint sofort auf der Seite. Gespeichert wird wie immer mit <b>Speichern</b> oben rechts.</p>
+    <button class="btn btn-primary btn-sm" type="button" id="navFertig">Fertig</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script type="module" src="/builder/editor.js"></script>
+<!--plugins-->
+</body>
+</html>
