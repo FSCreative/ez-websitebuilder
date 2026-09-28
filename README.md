@@ -125,3 +125,7 @@ window.EZ_EDITOR.knopf({ text: 'Karte aus PDF', seiten: ['speisekarte'], klick: 
 ```
 
 Verfügbar: `seite, api, toast, hinweis, stand, beschaeftigt, setzen, knopf, datei`.
+
+## Änderungen am System
+
+Änderungen am Builder immer **hier** machen, nie im `node_modules`-Ordner einer Website. Nach einer Änderung übernehmen alle angeschlossenen Websites die neue Fassung innerhalb von etwa 30 Minuten – oder sofort über *Actions → Builder aktualisieren → Run workflow* im jeweiligen Website-Repository.
