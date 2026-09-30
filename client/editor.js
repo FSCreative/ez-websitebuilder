@@ -1426,6 +1426,21 @@ document.addEventListener('input', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.target.id === 'esGroesse' && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
 });
+/* Reinklicken markiert die Zahl ganz - einfach die neue Größe tippen. */
+document.addEventListener('focusin', (e) => {
+  if (e.target.id !== 'esGroesse') return;
+  e.target.select();
+  e.target.dataset.frisch = '1';
+});
+document.addEventListener('mouseup', (e) => {
+  if (e.target.id === 'esGroesse' && e.target.dataset.frisch) { e.preventDefault(); delete e.target.dataset.frisch; }
+});
+document.addEventListener('focusout', (e) => {
+  if (e.target.id !== 'esGroesse') return;
+  delete e.target.dataset.frisch;
+  const px = Math.round(Number(e.target.value));
+  if (px >= 8 && px <= 200) groesse(0, px);
+});
 ['#etSmaller', '#etBigger'].forEach((sel, i) => {
   const b = $(sel);
   if (!b) return;
