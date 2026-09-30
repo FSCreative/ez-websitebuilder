@@ -275,6 +275,9 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .es-zeile .input{flex:1;min-width:0;padding:.35rem .5rem;font-size:.82rem}
 .es-label{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ezui-leise);width:100%}
 .es-wert{font-family:var(--ezui-mono);font-size:.7rem;min-width:3.2rem;text-align:center}
+.es-px{display:inline-flex;align-items:center;gap:.2rem;height:30px;padding:0 .5rem 0 .2rem;border-radius:8px;background:rgba(118,118,128,.12);font-size:.72rem;color:var(--ezui-leise,#86868b)}
+.es-px input{width:3.2rem;border:0;background:transparent;font:inherit;font-size:.82rem;font-weight:600;color:var(--ezui-text,#1d1d1f);text-align:right;outline:none;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.es-px:focus-within{box-shadow:0 0 0 3px rgba(0,113,227,.25);background:#fff}
 .es-feld{display:flex;flex-direction:column;gap:.25rem}
 .es-feld > span{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ezui-leise)}
 .es-feld .input,.es-feld select.input{padding:.4rem .55rem;font-size:.85rem;width:100%}

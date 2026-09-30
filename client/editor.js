@@ -819,7 +819,7 @@ function elementLeiste(info) {
       <div class="es-zeile">
         <span class="es-label">Größe</span>
         <button type="button" class="btn btn-sm" data-tu="kleiner">A−</button>
-        <span class="es-wert" id="esGroesse">${info.groesse ? info.groesse + ' px' : '–'}</span>
+        <label class="es-px" title="Schriftgröße in Pixel – eintippen oder mit ↑ ↓ ändern"><input type="number" id="esGroesse" min="8" max="200" step="1" value="${info.groesse || info.groesseIst || ''}" placeholder="–"><span>px</span></label>
         <button type="button" class="btn btn-sm" data-tu="groesser">A+</button></div>
       <div class="es-zeile"><span class="es-label">Ausrichtung</span>${AUSRICHT.map(([w, t]) =>
         `<button type="button" class="btn btn-sm${info.ausricht === w ? ' btn-primary' : ''}" data-tu="ausricht" data-wie="${w}">${t}</button>`).join('')}</div>
@@ -950,8 +950,8 @@ function elementLeiste(info) {
       if (zustand.vorschau) return toast('In der Vorschau lässt sich nichts ändern.');
       if (tu === 'bild') sende({ typ: 'ez-bild-oeffnen-aktiv', video: false });
       if (tu === 'video') sende({ typ: 'ez-bild-oeffnen-aktiv', video: true });
-      if (tu === 'kleiner') groesse(-1);
-      if (tu === 'groesser') groesse(1);
+      if (tu === 'kleiner') groesse(zustand.shift ? -4 : -1);
+      if (tu === 'groesser') groesse(zustand.shift ? 4 : 1);
       if (tu === 'ausricht') sende({ typ: 'ez-ausricht', wie: el.dataset.wie });
       if (tu === 'fett') befehl('bold');
       if (tu === 'kursiv') befehl('italic');
@@ -1276,7 +1276,7 @@ window.addEventListener('message', (e) => {
   if (e.data.typ === 'ez-hinweis') toast(e.data.text);
   if (e.data.typ === 'ez-groesse-ist') {
     const s1 = $('#etSize'); if (s1) s1.textContent = e.data.px + ' px';
-    const g = $('#esGroesse'); if (g) g.textContent = e.data.px + ' px';
+    const g = $('#esGroesse'); if (g && document.activeElement !== g) g.value = e.data.px;
   }
   if (e.data.typ === 'ez-link-waehlen') {
     /* Knopf-Block: die Adresse ist ein eigenes Feld. Sonst: Link im Text. */
@@ -1403,16 +1403,34 @@ function hinweisZeigen(titel, text) {
   box.querySelector('button').focus();
 }
 
-/* Schriftgröße in Zweierschritten. */
-function groesse(schritt) {
+/* Schriftgröße in 1-px-Schritten (mit gedrückter Umschalttaste 4 px)
+   oder direkt als Zahl im Feld neben A− / A+. */
+function groesse(schritt, px) {
   if (zustand.vorschau) return toast('In der Vorschau lässt sich nichts ändern.');
-  rahmen()?.postMessage({ typ: 'ez-groesse', schritt }, HERKUNFT);
+  rahmen()?.postMessage({ typ: 'ez-groesse', schritt, px }, HERKUNFT);
 }
+document.addEventListener('keydown', (e) => { zustand.shift = e.shiftKey; });
+document.addEventListener('keyup', (e) => { zustand.shift = e.shiftKey; });
+document.addEventListener('mousedown', (e) => { zustand.shift = e.shiftKey; }, true);
+document.addEventListener('change', (e) => {
+  if (e.target.id !== 'esGroesse') return;
+  const px = Math.round(Number(e.target.value));
+  if (px >= 8 && px <= 200) groesse(0, px);
+});
+document.addEventListener('input', (e) => {
+  /* Pfeiltasten und die kleinen Pfeile im Feld: sofort anwenden. */
+  if (e.target.id !== 'esGroesse' || e.inputType) return;
+  const px = Math.round(Number(e.target.value));
+  if (px >= 8 && px <= 200) groesse(0, px);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.id === 'esGroesse' && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
 ['#etSmaller', '#etBigger'].forEach((sel, i) => {
   const b = $(sel);
   if (!b) return;
   b.addEventListener('mousedown', (e) => e.preventDefault());
-  b.addEventListener('click', () => groesse(i === 0 ? -1 : 1));
+  b.addEventListener('click', (e) => groesse((i === 0 ? -1 : 1) * (e.shiftKey ? 4 : 1)));
 });
 
 /* Schriftart für das gewählte Element. */

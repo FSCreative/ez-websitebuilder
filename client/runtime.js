@@ -1323,6 +1323,8 @@ const heroAnimation = (function () {
       linkFeld: el.getAttribute('data-ez-link') || (el.matches('a[data-ez]') ? 'link.' + k : null),
       schrift: schriftWerte[k] || '',
       groesse: groesseWerte[k] || 0,
+      /* Aktuelle Größe, auch wenn noch keine eigene gesetzt ist - fürs Zahlenfeld. */
+      groesseIst: Math.round(parseFloat(getComputedStyle(el).fontSize) || 0),
       ausricht: ausrichtWerte[k] || ''
     };
   }
@@ -1611,8 +1613,9 @@ const heroAnimation = (function () {
       punkte.push(['Zentriert', () => ausrichten(k, 'center')]);
       punkte.push(['Rechtsbündig', () => ausrichten(k, 'right')]);
       punkte.push(['#Schrift']);
-      punkte.push(['Größer', () => schriftStufe(k, 1), 'A+']);
-      punkte.push(['Kleiner', () => schriftStufe(k, -1), 'A−']);
+      punkte.push(['Größer', (ev) => schriftStufe(k, ev?.shiftKey ? 4 : 1), 'A+']);
+      punkte.push(['Kleiner', (ev) => schriftStufe(k, ev?.shiftKey ? -4 : -1), 'A−']);
+      punkte.push(['Größe eingeben …', () => groesseFragen(k), 'px']);
       punkte.push(['Schriftart wählen …', () => melden({ typ: 'ez-schrift-oeffnen' })]);
       punkte.push(['@farben']);
       punkte.push(['#Format']);
@@ -1695,7 +1698,7 @@ const heroAnimation = (function () {
     const aktionen = punkte.filter(([t]) => t !== '—' && t[0] !== '#' && t !== '@farben');
     menue.querySelectorAll(':scope > button').forEach((b) => {
       const eintrag = aktionen[i++];
-      b.addEventListener('click', () => { menueSchliessen(); eintrag[1](); });
+      b.addEventListener('click', (ev) => { menueSchliessen(); eintrag[1](ev); });
     });
     menue.querySelectorAll('.ez-menue-farben button').forEach((b) =>
       b.addEventListener('click', () => { farbeSetzen('farbe.' + k, b.dataset.farbe); menueSchliessen(); melden({ typ: 'ez-geaendert' }); }));
@@ -1711,16 +1714,28 @@ const heroAnimation = (function () {
     ausrichtWerte[k] = wie;
     melden({ typ: 'ez-geaendert' });
   }
-  function schriftStufe(k, schritt) {
+  /* Schriftgröße ändern: in 1-px-Schritten (mit Umschalttaste 4 px)
+     oder direkt auf einen Wert. */
+  function groesseAendern(k, { schritt = 0, px = 0 } = {}) {
     const el = elementeZu(k)[0];
-    if (!el) return;
-    const jetzt = groesseWerte[k] || parseFloat(getComputedStyle(el).fontSize) || 16;
-    const neu = Math.max(9, Math.min(160, Math.round(jetzt + schritt * 2)));
+    if (!el) return null;
+    const jetzt = Math.round(groesseWerte[k] || parseFloat(getComputedStyle(el).fontSize) || 16);
+    const neu = Math.max(8, Math.min(200, Math.round(px || (jetzt + schritt))));
     groesseWerte[k] = neu;
     elementeZu(k).forEach((x) => { x.style.fontSize = neu + 'px'; });
     rahmenSetzen();
     melden({ typ: 'ez-geaendert' });
     melden({ typ: 'ez-groesse-ist', px: neu });
+    return neu;
+  }
+  const schriftStufe = (k, schritt) => groesseAendern(k, { schritt });
+  function groesseFragen(k) {
+    const el = elementeZu(k)[0];
+    if (!el) return;
+    const jetzt = Math.round(groesseWerte[k] || parseFloat(getComputedStyle(el).fontSize) || 16);
+    const w = prompt('Schriftgröße in Pixel (8–200):', String(jetzt));
+    const px = parseInt(String(w || '').replace(/[^0-9]/g, ''), 10);
+    if (px) groesseAendern(k, { px });
   }
 
   document.addEventListener('contextmenu', (e) => {
@@ -2259,13 +2274,7 @@ const heroAnimation = (function () {
     if (e.data.typ === 'ez-groesse') {
       const el = zielElement();
       if (!el) return melden({ typ: 'ez-hinweis', text: 'Bitte zuerst einen Text anklicken.' });
-      const k = schluesselVon(el);
-      const jetzt = groesseWerte[k] || parseFloat(getComputedStyle(el).fontSize) || 16;
-      const neu = Math.max(9, Math.min(160, Math.round(jetzt + e.data.schritt * 2)));
-      groesseWerte[k] = neu;
-      elementeZu(k).forEach((x) => { x.style.fontSize = neu + 'px'; });
-      melden({ typ: 'ez-geaendert' });
-      melden({ typ: 'ez-groesse-ist', px: neu });
+      groesseAendern(schluesselVon(el), { schritt: Number(e.data.schritt) || 0, px: Number(e.data.px) || 0 });
     }
     if (e.data.typ === 'ez-schriften') {
       /* Welche Schrift die Seite ohne Einstellung benutzt - damit der Editor
