@@ -155,3 +155,7 @@ Umgebung: `DATABASE_URL` (Postgres), `EDITOR_PASSWORT`. Mehrere Websites mit dem
 ## Änderungen am System
 
 Änderungen am Builder immer **hier** machen, nie im `node_modules`-Ordner einer Website. Nach einer Änderung übernehmen alle angeschlossenen Websites die neue Fassung innerhalb von etwa 30 Minuten – oder sofort über *Actions → Builder aktualisieren → Run workflow* im jeweiligen Website-Repository.
+
+## Hinweis zur Erstellung
+
+Bei der Entwicklung dieses Projekts wurden teilweise KI-gestützte Werkzeuge eingesetzt. Der Code wurde geprüft.
