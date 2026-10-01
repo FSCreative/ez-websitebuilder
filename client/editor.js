@@ -666,8 +666,12 @@ function ndRendern() {
         ${wahl('burgerausricht', 'Einträge', [['', 'Linksbündig'], ['mitte', 'Zentriert']])}
         ${wahl('burgergroesse', 'Schriftgröße', [['', 'Normal'], ['gross', 'Groß']])}
       </div>
+      <div class="nd-titel">Menü-Symbol ☰</div>
+      <div class="nd-gruppe">
+        ${farbe('burgerfarbe', 'Farbe des Symbols', fw('burgerfarbe'))}
+      </div>
       <p class="mut" style="margin:0;font-size:.74rem">Schreibweise (Großbuchstaben) und Farbe der Einträge übernimmt das Handy-Menü von den <b>Menü-Einträgen</b>.</p>
-      ${zurueck(['burgerstil', 'burgerausricht', 'burgergroesse'])}`;
+      ${zurueck(['burgerstil', 'burgerausricht', 'burgergroesse', 'burgerfarbe'])}`;
   }
 
   if (ND.tab === 'fuss') {

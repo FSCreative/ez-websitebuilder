@@ -111,7 +111,7 @@ window.EZ_SITE = {
        --ez-text:#333; --ez-radius:8px; }
 ```
 
-Weitere: `--ez-tinte, --ez-leise, --ez-linie, --ez-flaeche, --ez-weiss, --ez-rot`. Kopf- und Fußzeile: `--kopffarbe, --menufarbe, --fussfarbe, --fussschrift, --titelfarbe`, im eigenen CSS mit Standardwert benutzen, etwa `background:var(--fussfarbe,#f5f5f7)`.
+Weitere: `--ez-tinte, --ez-leise, --ez-linie, --ez-flaeche, --ez-weiss, --ez-rot`. Kopf- und Fußzeile: `--kopffarbe, --menufarbe, --burgerfarbe, --fussfarbe, --fussschrift, --titelfarbe`, im eigenen CSS mit Standardwert benutzen, etwa `background:var(--fussfarbe,#f5f5f7)`. Die Farbe des Burger-Symbols (`--burgerfarbe`) setzt `builder.css` selbst – auf `.burger`/`#burger`: Striche als `<span>` ohne Klasse bekommen sie als Hintergrund, sonst gilt sie als `color` (für Striche mit `currentColor`).
 
 ## Plugins für den Editor
 

@@ -37,7 +37,7 @@ const SITE = Object.assign({
 const DESIGN_VARIABLEN = Object.assign({
   titelschrift: '--ez-titelschrift', textschrift: '--ez-textschrift', titelfarbe: '--titelfarbe',
   textfarbe: '--ez-text', akzent: '--ez-akzent', knopfform: '--ez-radius', fussfarbe: '--fussfarbe',
-  menufarbe: '--menufarbe', kopffarbe: '--kopffarbe', fussschrift: '--fussschrift'
+  menufarbe: '--menufarbe', kopffarbe: '--kopffarbe', fussschrift: '--fussschrift', burgerfarbe: '--burgerfarbe'
 }, SITE.designVariablen || {});
 const KNOPF = SITE.knopfKlasse;
 const PLATZHALTER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000"><rect width="1600" height="1000" fill="#e8e8ed"/><path d="M620 640l150-190 110 130 80-90 170 150z" fill="#c7c7cc"/><circle cx="1010" cy="400" r="46" fill="#c7c7cc"/></svg>');
@@ -339,6 +339,12 @@ const heroAnimation = (function () {
     const v = DESIGN_VAR[k];
     if (!v) return;
     const root = document.documentElement.style;
+    /* Farbe des Burger-Symbols: builder.css greift nur, solange sie gesetzt ist -
+       sonst bleibt die Farbe aus dem CSS der Website. */
+    if (k === 'burgerfarbe') {
+      if (/^#[0-9a-f]{6}$/i.test(wert || '')) document.documentElement.dataset.burgerfarbe = 'an';
+      else delete document.documentElement.dataset.burgerfarbe;
+    }
     if (!wert) { delete designWerte[k]; root.removeProperty(v); if (k === 'fussschrift') root.removeProperty('--fussschrift-dezent'); return; }
     designWerte[k] = wert;
     if (k === 'titelschrift' || k === 'textschrift') {
@@ -2297,6 +2303,7 @@ const heroAnimation = (function () {
           titelfarbe: stil('section h2, main h2, h2', 'color'),
           kopffarbe: stil('#siteNav', 'backgroundColor') || '#ffffff',
           menufarbe: stil('#navlinks a:not(.navcta)', 'color'),
+          burgerfarbe: stil('.burger > span:not([class]), #burger > span:not([class])', 'backgroundColor') || stil('.burger, #burger', 'color'),
           fussfarbe: stil('#siteFoot', 'backgroundColor'),
           fussschrift: stil('#siteFoot p', 'color')
         } });
