@@ -60,7 +60,7 @@ for (const f of dateien) {
 
 const name = path.basename(wurzel);
 schreibe(path.join(wurzel, 'site.config.json'), JSON.stringify({ name, seiten,
-  editor: { pfad: '/website', titel: 'Website bearbeiten', zurueck: { text: 'Website', link: '/' }, login: '/login' }, formulare: { an: '' } }, null, 2));
+  editor: { pfad: '/website', geschuetzt: true, titel: 'Website bearbeiten', zurueck: { text: 'Website', link: '/' }, login: '/login' }, formulare: { an: '' } }, null, 2));
 schreibe(path.join(wurzel, 'server.js'), `import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

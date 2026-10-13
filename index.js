@@ -315,7 +315,7 @@ export function mountBuilder(app, opts) {
   const FASSUNG = opts.fassung || Date.now().toString(36);
   const mitFassung = (html) => html.replace(/(href|src)="(\/(?:css|js|builder)\/[^"?]+)"/g, `$1="$2?v=${FASSUNG}"`);
   app.use('/builder', express.static(CLIENT, { setHeaders: (res) => res.set('Cache-Control', 'no-cache') }));
-  app.get(ed.pfad || '/website', (req, res) => {
+  app.get(ed.pfad || '/website', ...(ed.geschuetzt ? [requireStaff] : []), (req, res) => {
     fs.readFile(path.join(CLIENT, 'editor.html'), 'utf8', (err, html) => {
       if (err) return res.status(404).send('Nicht gefunden');
       const z = ed.zurueck || {};

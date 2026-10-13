@@ -581,3 +581,13 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .sitedit .crop-formate button{flex:none;padding:.25rem .6rem}
 .sitedit .crop-werkzeuge{display:flex;gap:.35rem}
 .sitedit .crop-info{margin:0;font-size:12px}
+
+/* Befehlspalette */
+.ez-palette{align-items:flex-start;padding-top:14vh}
+.ez-pal-inner{width:min(34rem,100%);padding:.6rem;border-radius:16px}
+.ez-pal-inner input{width:100%;font:inherit;font-size:1rem;padding:.8rem .9rem;border:0;border-bottom:1px solid var(--ezui-linie);outline:none;background:transparent;color:var(--ezui-text)}
+.ez-pal-inner ul{list-style:none;margin:.4rem 0 0;padding:0;max-height:50vh;overflow:auto}
+.ez-pal-inner li{display:flex;justify-content:space-between;gap:1rem;padding:.6rem .8rem;border-radius:10px;cursor:pointer;color:var(--ezui-text-2)}
+.ez-pal-inner li[aria-selected=true]{background:var(--ezui-tint-hell);color:var(--ezui-text)}
+.ez-pal-inner li.leer{cursor:default;color:var(--ezui-leise)}
+.ez-pal-inner kbd{font:12px var(--ezui-mono);color:var(--ezui-leise)}

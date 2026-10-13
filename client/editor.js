@@ -445,7 +445,7 @@ function hilfeZeigen() {
       <span><b>Kopfzeile, Menü, Fußzeile</b> – Kopf- oder Fußzeile anklicken, dann „Bearbeiten …“: ein Fenster für alles</span>
       <span><b>Sprungmarken</b> – Abschnitt anklicken, unten „Sprungmarke“ setzen; danach im Menü oder an Buttons als Ziel wählbar</span>
       <span><b>Rückgängig</b> – ↶ oben oder ⌘/Strg+Z nimmt den letzten Schritt zurück, ↷ holt ihn wieder – auch nach dem Speichern</span>
-      <span><b>Tasten</b> – ⌘/Strg+S speichern · ⌘/Strg+D Abschnitt duplizieren · Alt+↑/↓ verschieben · Entf löschen · Esc abwählen</span>
+      <span><b>Tasten</b> – ⌘/Strg+K Befehle suchen · ⌘/Strg+S speichern · ⌘/Strg+D Abschnitt duplizieren · Alt+↑/↓ verschieben · Entf löschen · Esc abwählen</span>
       <span><b>? Hilfe</b> – diese Übersicht jederzeit wieder öffnen</span>
     </div>
     <div class="ez-hf-knoepfe"><button class="btn btn-primary" type="button" data-los>Los geht's</button></div>
@@ -1539,6 +1539,67 @@ window.addEventListener('beforeunload', (e) => {
     e.returnValue = 'Du hast ungespeicherte Änderungen.';
     return e.returnValue;
   }
+});
+
+
+/* ---------------- Befehlspalette (⌘/Strg + K) ----------------
+   Alles an einem Ort: Seite wechseln, speichern, Ansicht, Hilfe ... einfach tippen. */
+function befehlsliste() {
+  const klick = (sel) => () => $(sel)?.click();
+  const liste = [
+    { t: 'Speichern', k: '⌘S', f: () => speichern() },
+    { t: 'Rückgängig', k: '⌘Z', f: klick('#etUndo') },
+    { t: 'Wiederholen', k: '⇧⌘Z', f: klick('#etRedo') },
+    { t: zustand.vorschau ? 'Zurück zum Bearbeiten' : 'Vorschau öffnen', f: klick('#etPreview') },
+    { t: 'Große Ansicht', f: () => geraetWechseln('desktop') },
+    { t: 'Handy-Ansicht', f: () => geraetWechseln('mobil') },
+    { t: 'Tab „Diese Seite"', f: () => seitenTab('seite') },
+    { t: 'Tab „Website-Design"', f: () => seitenTab('design') },
+    { t: 'Änderungen verwerfen', f: klick('#etReload') },
+    { t: 'Hilfe', f: hilfeZeigen }
+  ];
+  for (const p of zustand.seiten) liste.push({ t: 'Gehe zu: ' + p.titel, k: p.pfad, f: () => oeffne(p.slug) });
+  return liste;
+}
+function befehlspalette() {
+  if (document.querySelector('.ez-palette')) return;
+  const box = document.createElement('div');
+  box.className = 'ez-hinweisfenster ez-palette';
+  box.innerHTML = `<div class="ez-hf-inner ez-pal-inner" role="dialog" aria-modal="true" aria-label="Befehle">
+    <input type="text" placeholder="Befehl oder Seite suchen …" aria-label="Befehl suchen" autocomplete="off">
+    <ul role="listbox"></ul></div>`;
+  document.body.appendChild(box);
+  const eingabe = box.querySelector('input'), ul = box.querySelector('ul');
+  const alle = befehlsliste();
+  let treffer = alle, wahl = 0;
+  const zeichne = () => {
+    ul.innerHTML = treffer.map((b, i) => `<li role="option" data-i="${i}" aria-selected="${i === wahl}">
+      <span>${b.t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</span>${b.k ? `<kbd>${b.k.replace(/[&<>]/g, '')}</kbd>` : ''}</li>`).join('')
+      || '<li class="leer">Nichts gefunden</li>';
+    ul.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' });
+  };
+  const zu = () => box.remove();
+  const los = (i) => { const b = treffer[i]; if (!b) return; zu(); b.f(); };
+  eingabe.addEventListener('input', () => {
+    const q = eingabe.value.trim().toLowerCase();
+    treffer = q ? alle.filter((b) => b.t.toLowerCase().includes(q)) : alle; wahl = 0; zeichne();
+  });
+  eingabe.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); wahl = Math.min(wahl + 1, treffer.length - 1); zeichne(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); wahl = Math.max(wahl - 1, 0); zeichne(); }
+    else if (e.key === 'Enter') { e.preventDefault(); los(wahl); }
+    else if (e.key === 'Escape') { e.stopPropagation(); zu(); }
+  });
+  ul.addEventListener('click', (e) => { const li = e.target.closest('li[data-i]'); if (li) los(Number(li.dataset.i)); });
+  box.addEventListener('mousedown', (e) => { if (e.target === box) zu(); });
+  zeichne(); eingabe.focus();
+}
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); befehlspalette(); }
+});
+window.addEventListener('message', (e) => {
+  /* Auch aus der Website heraus (Rahmen) erreichbar. */
+  if (e.origin === location.origin && e.data?.typ === 'ez-palette') befehlspalette();
 });
 
 /* ---------------- Start ---------------- */
