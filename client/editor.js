@@ -372,10 +372,6 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Escape') sende('esc');
 });
 
-/* Nicht gespeicherte Aenderungen nicht still verlieren. */
-window.addEventListener('beforeunload', (e) => {
-  if (zustand.geaendert && !zustand.vorschau) { e.preventDefault(); e.returnValue = ''; }
-});
 
 /* Kurze Hilfe beim ersten Mal (und auf Knopfdruck). */
 function hilfeZeigen() {
@@ -1501,8 +1497,15 @@ document.addEventListener('keydown', (e) => {
     else if (ND.offen) navDialog(false);
   }
 });
+/* Nicht gespeicherte Aenderungen nie still verlieren: Schliessen des Tabs oder
+   Browsers, Neuladen, Zurueck und Linkklicks loesen die Browser-Warnung aus,
+   solange Inhalte, Design oder Menue nicht gespeichert sind. */
 window.addEventListener('beforeunload', (e) => {
-  if (zustand.geaendert) { e.preventDefault(); e.returnValue = ''; }
+  if (zustand.geaendert || zustand.seiteDirty || zustand.designDirty) {
+    e.preventDefault();
+    e.returnValue = 'Du hast ungespeicherte Änderungen.';
+    return e.returnValue;
+  }
 });
 
 /* ---------------- Start ---------------- */
