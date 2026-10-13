@@ -79,6 +79,10 @@ app.use(express.static(path.join(HIER, '${path.relative(wurzel, pub) || '.'}'), 
 app.listen(process.env.PORT || 3000, () => console.log('Website laeuft'));
 `);
 
+/* Automatische Aktualisierung: dieselbe Datei wie in der Vorlage. */
+const wf = new URL('../vorlage/.github/workflows/builder-aktualisieren.yml', import.meta.url);
+if (fs.existsSync(wf)) schreibe(path.join(wurzel, '.github', 'workflows', 'builder-aktualisieren.yml'), fs.readFileSync(wf, 'utf8'));
+
 const pk = path.join(wurzel, 'package.json');
 const p = fs.existsSync(pk) ? JSON.parse(fs.readFileSync(pk, 'utf8')) : { name: name.toLowerCase().replace(/[^a-z0-9-]+/g, '-'), private: true };
 p.type = p.type || 'module';
