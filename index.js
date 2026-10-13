@@ -18,6 +18,7 @@
    Seiten und liegen in einem eigenen Satz "_global".                    */
 import express from 'express';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -49,6 +50,26 @@ const TEXTFELD = /^(bild\.|hg\.|stil|schrift|groesse|ausricht|link\.|farbe\.|ver
    Schrift, Farbe usw. dieser Elemente. */
 const GLOBAL = /^(m\.)?(global\.|(stil|stilm|schrift|schriftm|groesse|groessem|ausricht|ausrichtm|farbe|ausschnitt|einpassen|anim|versteckt)\.global\.)/;
 export const istGlobal = (k) => GLOBAL.test(k);
+
+
+/* Text komprimiert ausliefern (Brotli, sonst gzip) - ohne zusaetzliche Pakete. */
+function codierung(req) {
+  const a = String(req.get('accept-encoding') || '');
+  return /\bbr\b/.test(a) ? 'br' : /\bgzip\b/.test(a) ? 'gzip' : null;
+}
+function komprimieren(art, buf, schnell) {
+  return art === 'br'
+    ? zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: schnell ? 4 : 11 } })
+    : zlib.gzipSync(buf, { level: schnell ? 6 : 9 });
+}
+function sendeHtml(req, res, html) {
+  const art = codierung(req);
+  res.type('html');
+  res.set('Vary', 'Accept-Encoding');
+  const buf = Buffer.from(html, 'utf8');
+  if (!art || buf.length < 1024) return res.send(buf);
+  res.set('Content-Encoding', art).send(komprimieren(art, buf, true));
+}
 
 export function mountBuilder(app, opts) {
   const { config, store, requireStaff } = opts;
@@ -314,7 +335,27 @@ export function mountBuilder(app, opts) {
      damit nach dem Aufspielen jeder Browser die neue Datei laedt. */
   const FASSUNG = opts.fassung || Date.now().toString(36);
   const mitFassung = (html) => html.replace(/(href|src)="(\/(?:css|js|builder)\/[^"?]+)"/g, `$1="$2?v=${FASSUNG}"`);
-  app.use('/builder', express.static(CLIENT, { setHeaders: (res) => res.set('Cache-Control', 'no-cache') }));
+  /* Skripte und Stile: komprimiert und - mit Fassungs-Kennung (?v=) - ein Jahr
+     lang im Browser behalten; ohne Kennung bleibt es bei no-cache. */
+  const vorKomprimiert = new Map();
+  const MIME = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+  app.use('/builder', (req, res, next) => {
+    const ext = path.extname(req.path);
+    const art = codierung(req);
+    if (!MIME[ext] || !art || !['GET', 'HEAD'].includes(req.method)) return next();
+    const datei = path.join(CLIENT, path.normalize(req.path));
+    if (!datei.startsWith(CLIENT + path.sep)) return next();
+    fs.stat(datei, (err, st) => {
+      if (err || !st.isFile()) return next();
+      const key = art + datei + st.mtimeMs;
+      let buf = vorKomprimiert.get(key);
+      if (!buf) { buf = komprimieren(art, fs.readFileSync(datei), false); vorKomprimiert.set(key, buf); }
+      res.set({ 'Content-Type': MIME[ext], 'Content-Encoding': art, Vary: 'Accept-Encoding',
+        'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache' });
+      res.send(buf);
+    });
+  });
+  app.use('/builder', express.static(CLIENT, { setHeaders: (res, f, st) => res.set('Cache-Control', 'no-cache') }));
   app.get(ed.pfad || '/website', ...(ed.geschuetzt ? [requireStaff] : []), (req, res) => {
     fs.readFile(path.join(CLIENT, 'editor.html'), 'utf8', (err, html) => {
       if (err) return res.status(404).send('Nicht gefunden');
@@ -361,9 +402,9 @@ export function mountBuilder(app, opts) {
         if (err) return next();
         res.set('Cache-Control', 'no-cache');
         try {
-          res.type('html').send(inhalteEinbauen(html, await felderFuer(seite.slug)));
+          sendeHtml(req, res, inhalteEinbauen(html, await felderFuer(seite.slug)));
         } catch {
-          res.type('html').send(mitFassung(html));
+          sendeHtml(req, res, mitFassung(html));
         }
       });
     });
