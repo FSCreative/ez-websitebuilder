@@ -207,6 +207,29 @@ const heroAnimation = (function () {
      transform - so bleibt der Textfluss der Seite unberuehrt. */
   const istHandy = () => window.innerWidth <= 820;
 
+  /* Bilder, die ihren Rahmen ganz ausfuellen (etwa Next.js <Image fill> in
+     einem <div> mit overflow:hidden), werden samt Rahmen verschoben und
+     vergroessert - sonst rutscht nur das Bild im abgeschnittenen Rahmen.
+     Einmal bestimmt und gemerkt, solange das Element noch unveraendert ist. */
+  const zielSpeicher = new WeakMap();
+  function bewegZiel(el) {
+    if (!el || !/^(IMG|VIDEO)$/.test(el.tagName)) return el;
+    if (zielSpeicher.has(el)) return zielSpeicher.get(el);
+    let ziel = el, t = el;
+    for (let i = 0; i < 3; i++) {
+      const p = t.parentElement;
+      if (!p || p === document.body || p.matches('section, header, main, footer, .ezblock')) break;
+      if (p.childElementCount > 1 && t !== el && !p.querySelector(':scope > img, :scope > video')) break;
+      const deckt = Math.abs(t.offsetWidth - p.clientWidth) <= 2 && Math.abs(t.offsetHeight - p.clientHeight) <= 2;
+      if (!deckt) break;
+      t = p;
+      const cs = getComputedStyle(p);
+      if (cs.overflow !== 'visible' || cs.overflowX !== 'visible' || cs.overflowY !== 'visible') { ziel = p; break; }
+    }
+    zielSpeicher.set(el, ziel);
+    return ziel;
+  }
+
   /* Auswählbare Schriften. Geladen wird nur, was eine Seite wirklich
      benutzt - sonst kostet jede Schrift Ladezeit beim Gast. */
   const SCHRIFTEN = {
@@ -427,7 +450,8 @@ const heroAnimation = (function () {
     const [dx = 0, dy = 0, skala = 1, breite = 0, hoehe = 0] =
       String(wert).split(',').map((n) => Number(n) || 0);
     stilWerte[schluessel] = { dx, dy, skala: skala || 1, breite, hoehe };
-    elementeZu(schluessel).forEach((el) => {
+    elementeZu(schluessel).forEach((bild) => {
+      const el = bewegZiel(bild);
       el.style.transform = `translate(${dx}px, ${dy}px) scale(${skala || 1})`;
       el.style.transformOrigin = 'center center';
       if (breite) el.style.width = breite + 'px';
@@ -1212,7 +1236,8 @@ const heroAnimation = (function () {
 
   function stilAnwenden(k) {
     const st = stilVon(k);
-    elementeZu(k).forEach((el) => {
+    elementeZu(k).forEach((bild) => {
+      const el = bewegZiel(bild);
       el.style.transform = (st.dx || st.dy || st.skala !== 1)
         ? `translate(${st.dx}px, ${st.dy}px) scale(${st.skala})` : '';
       el.style.transformOrigin = 'center center';
@@ -1466,7 +1491,7 @@ const heroAnimation = (function () {
       if (art === 'move' && el.classList.contains('ezblock') && el.dataset.block) return abschnittZiehen(e, el);
       if (art === 'move' && el.hasAttribute('data-ez-menue')) return;
       const k = schluesselVon(el);
-      const kasten = el.getBoundingClientRect();
+      const kasten = bewegZiel(el).getBoundingClientRect();
       const start = { x: e.clientX, y: e.clientY, ...stilVon(k),
         breite: stilVon(k).breite || Math.round(kasten.width),
         hoehe: stilVon(k).hoehe || Math.round(kasten.height) };
@@ -1479,7 +1504,7 @@ const heroAnimation = (function () {
              schieben will, haelt die Umschalttaste gedrueckt. */
           let nx = Math.round(start.dx + dx), ny = Math.round(start.dy + dy);
           if (!ev.shiftKey) {
-            const gerastet = einrasten(el, k, nx, ny);
+            const gerastet = einrasten(bewegZiel(el), k, nx, ny);
             nx = gerastet.dx; ny = gerastet.dy;
             hilfslinienZeigen(gerastet.linien);
           } else {
@@ -2536,6 +2561,8 @@ const heroAnimation = (function () {
       delete stilWerte[k]; delete schriftWerte[k]; delete groesseWerte[k]; delete ausrichtWerte[k];
       delete farbeWerte[k]; delete ausschnittWerte[k]; delete einpassenWerte[k]; delete animWerte[k]; verstecktWerte.delete(k);
       elementeZu(k).forEach((x) => {
+        const z = bewegZiel(x);
+        if (z !== x) { z.style.transform = ''; z.style.width = ''; z.style.height = ''; }
         x.style.transform = ''; x.style.width = ''; x.style.height = ''; x.style.fontFamily = ''; x.style.fontSize = '';
         x.style.textAlign = ''; x.style.color = ''; x.style.objectFit = ''; x.style.backgroundSize = ''; x.style.backgroundRepeat = ''; x.style.objectPosition = ''; x.style.backgroundPosition = '';
         x.classList.remove('ez-versteckt');
