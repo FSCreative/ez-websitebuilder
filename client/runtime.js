@@ -1020,6 +1020,22 @@ const heroAnimation = (function () {
     return f ? (f.getAttribute('data-ez') || f.getAttribute('data-ez-img') || f.getAttribute('data-ez-bg')) : 'ende';
   };
 
+  /* Der Abschnitt, in dem die Bildschirmmitte liegt, sonst der mit der
+     groessten sichtbaren Flaeche. Kopf- und Fusszeile zaehlen nicht. */
+  function sichtbarerAbschnitt() {
+    if (!ABSCHNITT) return null;
+    const mitte = innerHeight / 2;
+    let beste = null, flaeche = 0;
+    for (const el of document.querySelectorAll(ABSCHNITT)) {
+      if (el.id === 'siteNav' || el.id === 'siteFoot' || el.closest('#siteNav, #siteFoot, .ez-plus')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top <= mitte && r.bottom >= mitte) return el;
+      const sicht = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
+      if (sicht > flaeche) { flaeche = sicht; beste = el; }
+    }
+    return beste;
+  }
+
   function blockEinfuegen(def) {
     const vorlage = BLOCK_VORLAGEN[def.art];
     if (!vorlage) return null;
@@ -1946,8 +1962,10 @@ const heroAnimation = (function () {
   function blockHinzufuegen(art) {
     if (!BLOCK_VORLAGEN[art]) return;
     const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    /* Hinter dem gewaehlten Element, sonst ans Ende. */
-    const nach = aktiv ? (aktiv.closest('.ezblock[data-block]')?.dataset.block || schluesselVon(aktiv)) : 'ende';
+    /* Hinter dem gewaehlten Element; ohne Auswahl hinter dem Abschnitt, der
+       gerade im Bild steht - erst wenn es keinen gibt, ans Ende. */
+    const nach = aktiv ? (aktiv.closest('.ezblock[data-block]')?.dataset.block || schluesselVon(aktiv))
+      : bezugVon(sichtbarerAbschnitt());
     const def = { id, art, nach };
     bloecke.push(def);
     const el = blockEinfuegen(def);
