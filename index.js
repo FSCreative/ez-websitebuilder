@@ -293,6 +293,51 @@ export function mountBuilder(app, opts) {
     res.json({ ok: true });
   });
 
+  /* ---------------- Dateien (PDF) ----------------
+     Zum Verlinken, etwa ein Grundriss oder eine Preisliste. Roh hochgeladen
+     wie Videos, nur fuer angemeldete Bearbeiter, liegt in derselben Ablage.
+     Angenommen wird nur, was wirklich ein PDF ist ("%PDF-" am Anfang). */
+  const DATEI_TYPEN = { 'application/pdf': 'pdf' };
+  const MAX_DATEI_BYTES = 20 * 1024 * 1024;
+  const dateiName = (n) => String(n || '').toLowerCase().replace(/\.pdf$/i, '')
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  app.post('/api/dateien', requireStaff, express.raw({ type: Object.keys(DATEI_TYPEN), limit: '21mb' }), async (req, res) => {
+    const mime = String(req.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!DATEI_TYPEN[mime]) return res.status(415).json({ error: 'Erlaubt sind PDF-Dateien.' });
+    const bytes = Buffer.isBuffer(req.body) ? req.body : null;
+    if (!bytes || !bytes.length) return res.status(400).json({ error: 'Die Datei ist leer.' });
+    if (bytes.length > MAX_DATEI_BYTES) return res.status(413).json({ error: 'Die Datei ist zu groß (höchstens 20 MB).' });
+    if (!bytes.subarray(0, 1024).includes('%PDF-')) return res.status(415).json({ error: 'Das ist keine gültige PDF-Datei.' });
+    let name = '';
+    try { name = decodeURIComponent(req.get('x-datei-name') || ''); } catch { name = ''; }
+    const kurz = dateiName(name);
+    const id = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (kurz ? '-' + kurz : '') + '.' + DATEI_TYPEN[mime];
+    await store.saveImage(id, mime, bytes, clean(name, 120));
+    res.status(201).json({ ok: true, id, url: '/datei/db/' + id, name: clean(name, 120), size: bytes.length });
+  });
+  app.get('/api/dateien', requireStaff, async (req, res) => {
+    res.json({ dateien: (await store.listImages())
+      .filter((i) => DATEI_TYPEN[String(i.mime || '')])
+      .map((i) => ({ ...i, url: '/datei/db/' + i.id })) });
+  });
+  app.get('/datei/db/:id', async (req, res) => {
+    const d = await store.getImage(req.params.id);
+    if (!d || !DATEI_TYPEN[String(d.mime || '')]) return res.status(404).end();
+    const kurz = /^d[a-z0-9]+-([a-z0-9-]+)\.pdf$/.exec(req.params.id);
+    res.set('Content-Type', d.mime);
+    res.set('Content-Disposition', `inline; filename="${kurz ? kurz[1] : 'datei'}.pdf"`);
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.end(d.bytes);
+  });
+  app.delete('/api/dateien/:id', requireStaff, async (req, res) => {
+    const d = await store.getImage(req.params.id);
+    if (!d || !DATEI_TYPEN[String(d.mime || '')]) return res.status(404).json({ error: 'Unbekannte Datei' });
+    await store.deleteImage(req.params.id);
+    res.json({ ok: true });
+  });
+
   /* ---------------- Formulare aus dem Editor ----------------
      Ein Formular-Block schickt seine Felder als Liste. Die Nachricht geht an
      config.formulare.an (oder opts.formularAn). Ohne Mailversand landet sie
@@ -415,7 +460,7 @@ export function mountBuilder(app, opts) {
     fassung: FASSUNG,
     /* Routen mit eigenem, grossem Body-Parser - der allgemeine kleine
        Parser der Website muss sie durchlassen. */
-    grosseRumpfe: ['/api/images', '/api/videos'],
+    grosseRumpfe: ['/api/images', '/api/videos', '/api/dateien'],
     slugFuer: (pfad) => (PAGES.find((p) => p.pfad === pfad) || {}).slug || null,
     felderFuer
   };

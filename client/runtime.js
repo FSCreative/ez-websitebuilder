@@ -32,8 +32,13 @@ const SITE = Object.assign({
   knopfText: 'Mehr erfahren',
   standardLink: '/',
   beispielZitat: '„Ein Satz, der hängen bleibt.“',
-  formularZiel: '/api/builder/formular'
+  formularZiel: '/api/builder/formular',
+  akzentKlasse: ''             // Hervorheben im Text: 'eigene-klasse' oder true (= ez-akzent); leer = aus
 }, window.EZ_SITE || {});
+/* Hervorheben im Text (ein Wort in der Akzentfarbe): nur, wenn die Website
+   es einschaltet - mit ihrer eigenen Klasse oder mit "ez-akzent" aus builder.css. */
+const AKZENT = SITE.akzentKlasse === true ? 'ez-akzent'
+  : (/^[a-z_][a-z0-9_-]{0,39}$/i.test(String(SITE.akzentKlasse || '').trim()) ? String(SITE.akzentKlasse).trim() : '');
 const DESIGN_VARIABLEN = Object.assign({
   titelschrift: '--ez-titelschrift', textschrift: '--ez-textschrift', titelfarbe: '--titelfarbe',
   textfarbe: '--ez-text', akzent: '--ez-akzent', knopfform: '--ez-radius', fussfarbe: '--fussfarbe',
@@ -1368,6 +1373,7 @@ const heroAnimation = (function () {
       anker: ankerInfo(el),
       link: (el.getAttribute('data-ez-link') || el.matches('a[data-ez]')) ? (el.getAttribute('href') || '') : null,
       linkFeld: el.getAttribute('data-ez-link') || (el.matches('a[data-ez]') ? 'link.' + k : null),
+      akzent: !!AKZENT && el.hasAttribute('data-ez'),
       schrift: schriftWerte[k] || '',
       groesse: groesseWerte[k] || 0,
       /* Aktuelle Größe, auch wenn noch keine eigene gesetzt ist - fürs Zahlenfeld. */
@@ -1653,6 +1659,7 @@ const heroAnimation = (function () {
       punkte.push(['Fett', () => fuehreAus('bold'), 'B']);
       punkte.push(['Kursiv', () => fuehreAus('italic'), 'I']);
       punkte.push(['Unterstrichen', () => fuehreAus('underline'), 'U']);
+      if (AKZENT) punkte.push(['Hervorheben (Akzentfarbe)', () => akzentUmschalten()]);
       punkte.push(['Link im Text setzen', () => melden({ typ: 'ez-link-waehlen', feld: '' })]);
       punkte.push(['Formatierung entfernen', () => fuehreAus('removeFormat')]);
       punkte.push(['#Ausrichtung']);
@@ -1983,6 +1990,51 @@ const heroAnimation = (function () {
     melden({ typ: 'ez-geaendert' });
   }
 
+  /* Hervorheben: das markierte Wort kommt in ein <span> mit der Akzent-Klasse
+     der Website (EZ_SITE.akzentKlasse). Steht die Markierung oder der Cursor
+     schon in einer Hervorhebung, wird sie wieder aufgehoben. */
+  function akzentUmschalten() {
+    if (!AKZENT) return;
+    const s = document.getSelection();
+    const jetzt = s && s.rangeCount && hostVon(s.anchorNode) ? s.getRangeAt(0).cloneRange() : null;
+    const r = jetzt || (letzteAuswahl ? letzteAuswahl.cloneRange() : null);
+    const host = r && hostVon(r.startContainer);
+    const hinweis = (text) => melden({ typ: 'ez-hinweis', text });
+    if (!r || !host || !host.isContentEditable) return hinweis('Bitte zuerst im Text das Wort markieren, das hervorgehoben werden soll.');
+    if (!host.contains(r.endContainer)) return hinweis('Bitte nur innerhalb eines Textes markieren.');
+    const auswaehlen = (bereich) => {
+      window.focus(); host.focus({ preventScroll: true });
+      s.removeAllRanges(); s.addRange(bereich); letzteAuswahl = bereich.cloneRange();
+    };
+    const istAkzent = (el) => el.tagName === 'SPAN' && el.classList.contains(AKZENT) && el !== host;
+    const vorhanden = [...host.querySelectorAll('span')].filter((el) => istAkzent(el) && r.intersectsNode(el));
+    if (vorhanden.length) {
+      /* Aufheben: der Text bleibt, nur die Hervorhebung faellt weg. */
+      const kinder = vorhanden.flatMap((el) => [...el.childNodes]);
+      vorhanden.forEach((el) => el.replaceWith(...el.childNodes));
+      if (kinder.length) {
+        const bereich = document.createRange();
+        bereich.setStartBefore(kinder[0]); bereich.setEndAfter(kinder[kinder.length - 1]);
+        auswaehlen(bereich);
+      }
+    } else {
+      if (r.collapsed) return hinweis('Bitte zuerst im Text das Wort markieren, das hervorgehoben werden soll.');
+      const span = document.createElement('span');
+      span.className = AKZENT;
+      span.appendChild(r.extractContents());
+      r.insertNode(span);
+      /* Leere Reste direkt daneben (etwa ein geteiltes <b></b>) nicht stehen lassen. */
+      for (const n of [span.previousSibling, span.nextSibling]) {
+        if (n && n.nodeType === 1 && !n.textContent && !n.querySelector('img, video, br')) n.remove();
+      }
+      host.normalize();
+      const bereich = document.createRange();
+      bereich.selectNodeContents(span);
+      auswaehlen(bereich);
+    }
+    melden({ typ: 'ez-geaendert' });
+  }
+
   /* ---- Bloecke hinzufuegen, verschieben, entfernen ---- */
   function blockHinzufuegen(art) {
     if (!BLOCK_VORLAGEN[art]) return;
@@ -2303,6 +2355,7 @@ const heroAnimation = (function () {
       if (b) blockVerschieben(b.dataset.block, e.data.richtung);
     }
     if (e.data.typ === 'ez-befehl') fuehreAus(e.data.befehl, e.data.wert);
+    if (e.data.typ === 'ez-akzent') akzentUmschalten();
     if (e.data.typ === 'ez-ausricht') {
       const el = zielElement();
       if (!el) return melden({ typ: 'ez-hinweis', text: 'Bitte zuerst ein Element anklicken.' });

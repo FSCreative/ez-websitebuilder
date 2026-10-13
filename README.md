@@ -43,6 +43,8 @@ mountBuilder(app, {
 ```
 
 Die Ablage braucht `getPage, savePage, listPages, saveImage, getImage, listImages, deleteImage`.
+Bilder, Videos und PDF-Dateien (zum Verlinken, etwa ein Grundriss: „PDF hochladen …“ bei Links,
+`/api/dateien`, ausgeliefert unter `/datei/db/…`) liegen alle darin, unterschieden am MIME-Typ.
 
 **3. Automatisch aktuell bleiben** – die Datei `.github/workflows/builder-aktualisieren.yml` aus dem Esszimmer-Repository in die Website kopieren. Sie prüft regelmäßig, ob es eine neue Builder-Fassung gibt, und schreibt sie in die `package-lock.json`; Railway spielt die Website daraufhin neu auf. Sofort geht es unter *Actions → Builder aktualisieren → Run workflow*. Es braucht dafür keinen Schlüssel.
 
@@ -100,9 +102,12 @@ window.EZ_SITE = {
   designVariablen: { akzent: '--marke', titelschrift: '--font-titel' },
   farben: { weiss: '#fff', schwarz: '#111', marke: '#0a7' },
   knopfKlasse: 'btn', knopfText: 'Mehr erfahren', standardLink: '/kontakt',
-  beispielbilder: ['/img/a.jpg', '/img/b.jpg']
+  beispielbilder: ['/img/a.jpg', '/img/b.jpg'],
+  akzentKlasse: 'accent'   // Knopf „Hervorheben“ im Text: <span class="accent">; true = Klasse ez-akzent (Farbe --ez-akzent)
 };
 ```
+
+Ohne `akzentKlasse` gibt es den Knopf „Hervorheben“ nicht – für bestehende Websites ändert sich nichts.
 
 ## Marke
 

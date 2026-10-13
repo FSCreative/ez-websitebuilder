@@ -21,6 +21,7 @@ const zustand = {
   design: {},           // Website-Design (global)
   menue: [],            // Menue-Eintraege (global)
   anker: [],            // Sprungmarken aller Seiten (vom Server)
+  dateien: [],          // hochgeladene PDF-Dateien (Linkziele)
   ankerSeite: {},       // Sprungmarken je Seite, live aus dem Rahmen
   designDirty: false,   // Design/Menue geaendert und noch nicht gespeichert
   seiteDirty: false,    // Inhalte dieser Seite geaendert und noch nicht gespeichert
@@ -131,7 +132,39 @@ async function ladeSeiten() {
 async function ladeAnker() {
   try { zustand.anker = (await api('/api/anker')).anker || []; } catch { /* dann eben ohne */ }
 }
-/* Auswahl fuer Verlinkungen: alle Seiten und alle Sprungmarken. */
+/* Hochgeladene PDF-Dateien - ebenfalls als Linkziel waehlbar. */
+async function ladeDateien() {
+  try { zustand.dateien = (await api('/api/dateien')).dateien || []; } catch { zustand.dateien = []; }
+}
+/* Ein PDF waehlen und hochladen; liefert die Adresse oder null. */
+function pdfHochladen() {
+  return new Promise((fertig) => {
+    const eingabe = document.createElement('input');
+    eingabe.type = 'file'; eingabe.accept = 'application/pdf,.pdf'; eingabe.hidden = true;
+    document.body.appendChild(eingabe);
+    eingabe.addEventListener('cancel', () => { eingabe.remove(); fertig(null); });
+    eingabe.addEventListener('change', async () => {
+      const datei = eingabe.files?.[0];
+      eingabe.remove();
+      if (!datei) return fertig(null);
+      if (datei.type && datei.type !== 'application/pdf') { toast('Bitte eine PDF-Datei wählen.'); return fertig(null); }
+      if (datei.size > 20 * 1024 * 1024) { toast('Die Datei ist zu groß (höchstens 20 MB).'); return fertig(null); }
+      toast('PDF wird hochgeladen …');
+      try {
+        const r = await fetch('/api/dateien', { method: 'POST', credentials: 'same-origin', body: datei,
+          headers: { 'Content-Type': 'application/pdf', 'X-Datei-Name': encodeURIComponent(datei.name || '') } });
+        if (r.status === 401) { location.href = document.body.dataset.login || '/'; return fertig(null); }
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'Das hat nicht geklappt.');
+        await ladeDateien();
+        toast('PDF hochgeladen: ' + (datei.name || d.id));
+        fertig(d.url);
+      } catch (e) { toast(e.message); fertig(null); }
+    });
+    eingabe.click();
+  });
+}
+/* Auswahl fuer Verlinkungen: alle Seiten, alle Sprungmarken und hochgeladene PDFs. */
 function zielOptionen(aktuell) {
   const seiten = zustand.seiten.map((p) => [p.pfad, p.titel]);
   const marken = new Map();
@@ -140,10 +173,12 @@ function zielOptionen(aktuell) {
     const seite = zustand.seiten.find((p) => p.pfad === pfad);
     for (const a of liste) marken.set(pfad + '#' + a.name, `${seite ? seite.titel : pfad} → ${a.titel}`);
   }
-  const bekannt = new Set([...seiten.map(([pf]) => pf), ...marken.keys()]);
+  const dateien = (zustand.dateien || []).map((d) => [d.url, String(d.name || d.id).replace(/[<>&"]/g, '')]);
+  const bekannt = new Set([...seiten.map(([pf]) => pf), ...marken.keys(), ...dateien.map(([u]) => u)]);
   const opt = (w, t) => `<option value="${w.replace(/"/g, '&quot;')}" ${aktuell === w ? 'selected' : ''}>${t}</option>`;
   const html = `<optgroup label="Seiten">${seiten.map(([w, t]) => opt(w, t)).join('')}</optgroup>`
     + (marken.size ? `<optgroup label="Sprungmarken (Anker)">${[...marken].sort((a, b) => a[1].localeCompare(b[1])).map(([w, t]) => opt(w, t)).join('')}</optgroup>` : '')
+    + (dateien.length ? `<optgroup label="Dateien (PDF)">${dateien.map(([w, t]) => opt(w, t)).join('')}</optgroup>` : '')
     + `<option value="__eigen" ${aktuell !== undefined && !bekannt.has(aktuell) ? 'selected' : ''}>Eigener Link (Adresse eintippen) …</option>`;
   return { html, bekannt };
 }
@@ -325,6 +360,12 @@ function linkSheet(auf) {
 $('#linkZiel').addEventListener('change', (e) => {
   if (e.target.value !== '__eigen') $('#linkUrl').value = e.target.value;
   $('#linkUrl').focus();
+});
+$('#linkPdf')?.addEventListener('click', async () => {
+  const url = await pdfHochladen();
+  if (!url) return;
+  $('#linkUrl').value = url;
+  $('#linkZiel').innerHTML = zielOptionen(url).html;
 });
 $('#linkOk').addEventListener('click', () => {
   const url = $('#linkUrl').value.trim();
@@ -883,6 +924,7 @@ function elementLeiste(info) {
       <div class="es-zeile">
         <button type="button" class="btn btn-sm" data-tu="fett" title="Fett (Cmd/Strg + B)"><b>B</b></button>
         <button type="button" class="btn btn-sm" data-tu="kursiv" title="Kursiv (Cmd/Strg + I)"><i>I</i></button>
+        ${info.akzent ? '<button type="button" class="btn btn-sm" data-tu="akzent" title="Markiertes Wort in der Akzentfarbe hervorheben – noch einmal klicken nimmt es zurück">Hervorheben</button>' : ''}
         <button type="button" class="btn btn-sm" data-tu="link">Link im Text</button>
         <button type="button" class="btn btn-sm" data-tu="format" title="Formatierung entfernen">Format ⌫</button>
         <button type="button" class="btn btn-sm" data-tu="undo" title="Rückgängig (Cmd/Strg + Z)">⟲</button>
@@ -898,7 +940,8 @@ function elementLeiste(info) {
     h += `<div class="es-feld es-ziel"><span>Verlinkung</span>
       <select class="input" data-tu="linkziel" title="Seite oder Sprungmarke wählen">${zielOptionen(info.link || undefined).html}</select>
       <div class="es-zeile"><input class="input" data-tu="linkfeld" value="${String(info.link).replace(/"/g, '&quot;')}" placeholder="/seite, /seite#anker oder https://…">
-      <button type="button" class="btn btn-sm" data-tu="linkok">OK</button></div></div>`;
+      <button type="button" class="btn btn-sm" data-tu="linkok">OK</button></div>
+      <div class="es-zeile"><button type="button" class="btn btn-sm" data-tu="linkpdf" title="Eine PDF-Datei hochladen und hierher verlinken">PDF hochladen …</button></div></div>`;
   }
   if (info.anker) {
     const a = info.anker;
@@ -1004,6 +1047,7 @@ function elementLeiste(info) {
       if (tu === 'ausricht') sende({ typ: 'ez-ausricht', wie: el.dataset.wie });
       if (tu === 'fett') befehl('bold');
       if (tu === 'kursiv') befehl('italic');
+      if (tu === 'akzent') sende({ typ: 'ez-akzent' });
       if (tu === 'format') befehl('removeFormat');
       if (tu === 'farbe') { sende({ typ: 'ez-farbe', farbe: el.dataset.farbe }); host.querySelectorAll('.es-farbe').forEach((x) => x.classList.toggle('ist-aktiv', x === el)); }
       if (tu === 'farbefrei') { sende({ typ: 'ez-farbe', farbe: el.value }); host.querySelectorAll('.es-farbe').forEach((x) => x.classList.remove('ist-aktiv')); }
@@ -1025,6 +1069,16 @@ function elementLeiste(info) {
       if (tu === 'linkok') {
         const url = host.querySelector('[data-tu="linkfeld"]').value.trim() || '#';
         if (info.linkFeld) { sende({ typ: 'ez-setzen', feld: info.linkFeld, wert: url }); setzeGeaendert(true); toast('Verlinkung gesetzt.'); }
+      }
+      if (tu === 'linkpdf') {
+        pdfHochladen().then((url) => {
+          if (!url || !info.linkFeld) return;
+          sende({ typ: 'ez-setzen', feld: info.linkFeld, wert: url });
+          setzeGeaendert(true);
+          info.link = url;
+          elementLeiste(info);
+          toast('PDF verlinkt – bitte speichern.');
+        });
       }
       if (tu === 'linkziel') {
         if (el.value === '__eigen') { host.querySelector('[data-tu="linkfeld"]').focus(); return; }
@@ -1167,6 +1221,10 @@ async function ladeBilder() {
     .join('');
   $('#imgGrid').querySelectorAll('button').forEach((b) =>
     b.addEventListener('click', () => waehleBild(b.dataset.url)));
+  /* Die festen Beispielfotos (/img/site/…) hat nicht jede Website - fehlende
+     Kacheln verschwinden, statt leer stehen zu bleiben. */
+  $('#imgGrid').querySelectorAll('img').forEach((im) =>
+    im.addEventListener('error', () => im.closest('button')?.remove(), { once: true }));
 
   const videos = v.videos || [];
   const vg = $('#vidGrid');
@@ -1637,6 +1695,7 @@ window.addEventListener('message', (e) => {
   try {
     await ladeSeiten();
     ladeAnker();
+    ladeDateien();
     oeffne('index');
     passeGroesseAn();
   } catch (e) { toast(e.message); }
