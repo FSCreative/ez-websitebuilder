@@ -123,7 +123,7 @@ async function ladeSeiten() {
   sel.addEventListener('change', () => {
     if (!sel.value) return;
     const vorher = zustand.aktuell?.slug || '';
-    if (!oeffne(sel.value)) sel.value = vorher;
+    oeffne(sel.value).then((ok) => { if (!ok) sel.value = vorher; });
   });
 }
 
@@ -159,11 +159,11 @@ function ladeRahmen() {
   passeGroesseAn();
 }
 
-function oeffne(slug) {
+async function oeffne(slug) {
   const seite = zustand.seiten.find((p) => p.slug === slug);
   if (!seite) return false;
   if (zustand.seiteDirty
-    && !confirm('Die Änderungen auf dieser Seite sind noch nicht gespeichert. Trotzdem wechseln?')) return false;
+    && await ungespeichertFrage('Die Änderungen auf dieser Seite sind noch nicht gespeichert.') === 'bleiben') return false;
   zustand.aktuell = seite;
   zustand.vorschau = false;
   pluginKnoepfeZeigen();
@@ -228,30 +228,63 @@ function mobilFrage() {
 }
 
 async function speichern() {
-  if (!zustand.aktuell) return;
-  if (zustand.vorschau) return toast('In der Vorschau lässt sich nichts speichern.');
-  if (!zustand.geaendert) return toast('Es gibt nichts zu speichern – die Seite ist aktuell.');
+  if (!zustand.aktuell) return false;
+  if (zustand.vorschau) { toast('In der Vorschau lässt sich nichts speichern.'); return false; }
+  if (!zustand.geaendert) { toast('Es gibt nichts zu speichern – die Seite ist aktuell.'); return true; }
   /* Am Telefon gilt die Aenderung ohnehin nur dort - keine Frage noetig. */
   const mobilMit = zustand.geraet === 'mobil' ? null : await mobilFrage();
   stand('speichert …');
-  wartetAufWerte = async (werte) => {
-    try {
-      const d = await api('/api/pages/' + zustand.aktuell.slug, { method: 'PUT', body: { fields: werte } });
-      /* Der Rahmen rechnet ab jetzt vom gespeicherten Stand aus weiter. */
-      rahmen()?.postMessage({ typ: 'ez-gespeichert', werte: d.fields || werte }, HERKUNFT);
-      setzeGeaendert(false);
-      ladeAnker();
-      toast(zustand.geraet === 'mobil'
-        ? 'Gespeichert – gilt nur für die Handy-Ansicht.'
-        : mobilMit
-          ? 'Gespeichert – gilt für beide Ansichten.'
-          : 'Gespeichert – die Handy-Ansicht bleibt unverändert.');
-    } catch (e) {
-      stand('nicht gespeichert', true);
-      toast(e.message);
-    }
-  };
-  rahmen()?.postMessage({ typ: 'ez-sammeln', mobilMit }, HERKUNFT);
+  return new Promise((fertig) => {
+    wartetAufWerte = async (werte) => {
+      try {
+        const d = await api('/api/pages/' + zustand.aktuell.slug, { method: 'PUT', body: { fields: werte } });
+        /* Der Rahmen rechnet ab jetzt vom gespeicherten Stand aus weiter. */
+        rahmen()?.postMessage({ typ: 'ez-gespeichert', werte: d.fields || werte }, HERKUNFT);
+        setzeGeaendert(false);
+        ladeAnker();
+        const uhr = new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+        stand('gespeichert um ' + uhr);
+        toast(zustand.geraet === 'mobil'
+          ? 'Gespeichert – gilt nur für die Handy-Ansicht.'
+          : mobilMit
+            ? 'Gespeichert – gilt für beide Ansichten.'
+            : 'Gespeichert – die Handy-Ansicht bleibt unverändert.');
+        fertig(true);
+      } catch (e) {
+        stand('nicht gespeichert', true);
+        toast(e.message);
+        fertig(false);
+      }
+    };
+    rahmen()?.postMessage({ typ: 'ez-sammeln', mobilMit }, HERKUNFT);
+    /* Antwortet der Rahmen nicht, bleibt der Editor nicht haengen. */
+    setTimeout(() => { if (wartetAufWerte) { wartetAufWerte = null; stand('nicht gespeichert', true); toast('Speichern hat nicht geklappt – bitte noch einmal versuchen.'); fertig(false); } }, 15000);
+  });
+}
+
+/* Dreifache Frage statt blossem "Trotzdem wechseln?": speichern und weiter,
+   verwerfen oder bleiben. Ergebnis: 'weiter' | 'bleiben'. */
+function ungespeichertFrage(text) {
+  return new Promise((fertig) => {
+    const box = document.createElement('div');
+    box.className = 'ez-hinweisfenster';
+    box.innerHTML = `<div class="ez-hf-inner" role="dialog" aria-modal="true">
+        <h3>Ungespeicherte Änderungen</h3><p>${text}</p>
+        <div class="ez-hf-knoepfe">
+          <button class="btn btn-primary btn-sm" data-w="speichern" type="button">Speichern und weiter</button>
+          <button class="btn btn-sm" data-w="verwerfen" type="button">Verwerfen</button>
+          <button class="btn btn-sm" data-w="bleiben" type="button">Abbrechen</button>
+        </div></div>`;
+    document.body.appendChild(box);
+    box.querySelectorAll('button[data-w]').forEach((b) => b.addEventListener('click', async () => {
+      const w = b.dataset.w;
+      box.remove();
+      if (w === 'bleiben') return fertig('bleiben');
+      if (w === 'speichern') return fertig((await speichern()) ? 'weiter' : 'bleiben');
+      fertig('weiter');
+    }));
+    box.querySelector('button[data-w=speichern]').focus();
+  });
 }
 
 /* ---------------- Vorschau ---------------- */
@@ -701,7 +734,7 @@ function ndRendern() {
   })));
   host.querySelectorAll('[data-nd-zeigen]').forEach((b) => b.addEventListener('click', () => rahmen()?.postMessage({ typ: 'ez-zeigen', ziel: b.dataset.ndZeigen }, HERKUNFT)));
   host.querySelector('[data-nd="handyansicht"]')?.addEventListener('click', () => {
-    if (geraetWechseln('mobil')) ndRendern();
+    geraetWechseln('mobil').then((ok) => { if (ok) ndRendern(); });
   });
 
   /* Menue-Eintraege */
@@ -1474,10 +1507,10 @@ $('#etReset')?.addEventListener('click', () => {
   rahmen()?.postMessage({ typ: 'ez-zuruecksetzen', was: 'alles' }, HERKUNFT);
 });
 
-function geraetWechseln(g) {
+async function geraetWechseln(g) {
   if (g === zustand.geraet) return true;
   if (zustand.seiteDirty
-    && !confirm('Beim Wechsel der Ansicht wird die Seite neu geladen. Nicht gespeicherte Änderungen an den Inhalten dieser Seite gehen verloren – Design und Menü bleiben erhalten. Fortfahren?')) return false;
+    && await ungespeichertFrage('Beim Wechsel der Ansicht wird die Seite neu geladen.') === 'bleiben') return false;
   /* Design-Aenderungen ueberleben das Neuladen: der Rahmen bekommt sie zurueck. */
   const design = zustand.designDirty;
   setzeGeaendert(false);
