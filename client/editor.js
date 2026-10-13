@@ -1549,6 +1549,11 @@ window.addEventListener('beforeunload', (e) => {
 
 /* ---------------- Befehlspalette (⌘/Strg + K) ----------------
    Alles an einem Ort: Seite wechseln, speichern, Ansicht, Hilfe ... einfach tippen. */
+function themaSetzen(t) {
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { if (t) localStorage.setItem('ez-thema', t); else localStorage.removeItem('ez-thema'); } catch { /* egal */ }
+}
+try { const t = localStorage.getItem('ez-thema'); if (t) document.documentElement.dataset.theme = t; } catch { /* egal */ }
 function befehlsliste() {
   const klick = (sel) => () => $(sel)?.click();
   const liste = [
@@ -1561,6 +1566,9 @@ function befehlsliste() {
     { t: 'Tab „Diese Seite"', f: () => seitenTab('seite') },
     { t: 'Tab „Website-Design"', f: () => seitenTab('design') },
     { t: 'Änderungen verwerfen', f: klick('#etReload') },
+    { t: 'Erscheinungsbild: Hell', f: () => themaSetzen('light') },
+    { t: 'Erscheinungsbild: Dunkel', f: () => themaSetzen('dark') },
+    { t: 'Erscheinungsbild: Wie das System', f: () => themaSetzen('') },
     { t: 'Hilfe', f: hilfeZeigen }
   ];
   for (const p of zustand.seiten) liste.push({ t: 'Gehe zu: ' + p.titel, k: p.pfad, f: () => oeffne(p.slug) });
