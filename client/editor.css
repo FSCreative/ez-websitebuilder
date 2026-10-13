@@ -626,3 +626,77 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 /* Befehle-Knopf in der Kopfzeile */
 .sitedit #etBefehle{font:500 12px var(--ezui-mono);color:var(--ezui-leise);border-color:var(--ezui-linie-2)}
 @media (max-width:640px){ .sitedit #etBefehle{display:none} }
+
+/* ================= Aufbau 2: links hinzufuegen, Mitte Seite, rechts Eigenschaften =================
+   Wie in Framer, Webflow oder Figma: wer etwas anklickt, findet die Einstellungen
+   immer an derselben Stelle rechts - ohne zu scrollen. */
+.sitedit .edit-wrap{grid-template-columns:276px minmax(0,1fr) 296px}
+.sitedit .es-tabs button{white-space:nowrap;padding-left:.4rem;padding-right:.4rem}
+.sitedit .es-kacheln button span{white-space:nowrap;font-size:11px}
+.sitedit .edit-insp{background:var(--ezui-side,rgba(246,246,248,.9));border-left:.5px solid var(--ezui-linie);
+  overflow:auto;display:flex;flex-direction:column;min-height:0}
+.sitedit .ei-kopf{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  padding:.85rem .9rem .55rem;background:inherit;font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ezui-leise)}
+.sitedit .ei-zu{width:24px;height:24px;border-radius:50%;border:0;background:var(--ezui-flaeche);color:var(--ezui-leise);font-size:11px;
+  display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .15s}
+.sitedit.hat-auswahl .ei-zu{opacity:1;pointer-events:auto}
+.sitedit .ei-zu:hover{background:var(--ezui-linie-2);color:var(--ezui-text)}
+.sitedit .edit-insp .es-element{background:transparent;box-shadow:none;border-radius:0;padding:0 .9rem 1.4rem}
+.sitedit .ei-leer{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.45rem;padding:2.6rem 1rem;color:var(--ezui-leise)}
+.sitedit .ei-leer svg{width:56px;height:56px;color:var(--ezui-tint);margin-bottom:.4rem}
+.sitedit .ei-leer b{color:var(--ezui-text);font-size:14px}
+.sitedit .ei-leer span{font-size:12.5px;line-height:1.5;max-width:22ch}
+/* Inhalte des Panels sanft einblenden, wenn eine Auswahl wechselt */
+.sitedit.hat-auswahl .edit-insp .es-element > *{animation:ei-ein .18s ease-out both}
+@keyframes ei-ein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Linke Leiste */
+.sitedit .es-head small{display:block;text-transform:none;letter-spacing:0;font-weight:400;font-size:11px;color:var(--ezui-leise-2);margin-top:.15rem}
+.sitedit .es-kacheln button{padding:.75rem .2rem .6rem}
+.sitedit .es-kacheln button:hover{transform:translateY(-1px)}
+.sitedit .es-tipp{margin-top:auto;display:flex;align-items:center;gap:.65rem;width:100%;text-align:left;padding:.7rem .75rem;
+  border:.5px solid var(--ezui-linie);border-radius:12px;background:var(--ezui-weiss);color:var(--ezui-text-2);box-shadow:var(--ezui-schatten-s)}
+.sitedit .es-tipp svg{width:22px;height:22px;color:var(--ezui-tint);flex:none}
+.sitedit .es-tipp b{display:block;font-size:12.5px;color:var(--ezui-text)}
+.sitedit .es-tipp small{display:block;font-size:11px;color:var(--ezui-leise)}
+.sitedit .es-tipp:hover{border-color:var(--ezui-tint-linie)}
+.sitedit .es-pane[data-tab="seite"]{display:flex;flex-direction:column;gap:.35rem;min-height:calc(100% - 3rem)}
+.sitedit .es-pane[data-tab="seite"][hidden]{display:none}
+
+/* Arbeitsflaeche mit feinem Punktraster - die Seite liegt darauf wie ein Blatt */
+.sitedit .edit-main{background-color:var(--ezui-grund);
+  background-image:radial-gradient(var(--ezui-linie-2) 1px,transparent 1.2px);background-size:20px 20px}
+.sitedit .edit-frame{background:transparent}
+.sitedit .edit-frame .scaler{border-radius:14px;box-shadow:0 30px 60px -30px rgba(0,0,0,.35),0 0 0 .5px var(--ezui-linie-2)}
+
+/* Speichern: zeigt seinen Zustand */
+.sitedit #etSave{min-width:104px;justify-content:center}
+.sitedit #etSave.ruht{color:var(--ezui-leise);background:transparent;border-color:transparent;box-shadow:none}
+.sitedit #etSave.ruht::before{content:"✓";margin-right:.35rem;color:var(--ezui-gruen)}
+.sitedit #etSave:not(.ruht){box-shadow:0 4px 14px -4px rgba(0,113,227,.55)}
+.sitedit .et-platz{flex:1}
+
+/* Mittlere Breite: Eigenschaften als schwebendes Panel, sobald etwas gewaehlt ist */
+@media (max-width:1180px){
+  .sitedit .edit-wrap{grid-template-columns:268px minmax(0,1fr)}
+  .sitedit .edit-insp{position:fixed;right:12px;top:64px;bottom:12px;width:300px;z-index:45;border:.5px solid var(--ezui-linie);
+    border-radius:16px;box-shadow:var(--ezui-schatten);background:var(--ezui-weiss);
+    transform:translateX(calc(100% + 24px));transition:transform .22s cubic-bezier(.3,.7,.3,1)}
+  .sitedit.hat-auswahl .edit-insp{transform:none}
+}
+/* Schmal: Eigenschaften als Blatt von unten */
+@media (max-width:820px){
+  .sitedit .edit-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .sitedit .edit-insp{left:0;right:0;top:auto;bottom:0;width:auto;max-height:58vh;border-radius:18px 18px 0 0;
+    transform:translateY(100%)}
+  .sitedit .es-tipp{display:none}
+  /* Handy: die Leiste wird ein schmaler Streifen, die Seite bekommt den Platz. */
+  .sitedit .edit-side{max-height:150px;padding:.5rem .6rem;border-right:0;border-bottom:.5px solid var(--ezui-linie)}
+  .sitedit .es-tabs{margin-bottom:.4rem}
+  .sitedit .es-pane[data-tab="seite"]{flex-direction:row;align-items:stretch;min-height:0;overflow-x:auto;gap:.4rem}
+  .sitedit .es-pane[data-tab="seite"] .es-head{display:none}
+  .sitedit .es-kacheln{display:flex;gap:.4rem}
+  .sitedit .es-kacheln button{min-width:74px;padding:.5rem .3rem .45rem}
+  .sitedit #etMedien{white-space:nowrap;align-self:center!important}
+  .sitedit .edit-insp .es-element{padding-bottom:calc(1.4rem + env(safe-area-inset-bottom))}
+}

@@ -72,6 +72,7 @@ function setzeGeaendert(an) {
      Ohne Änderung sagt er einfach, dass es nichts zu speichern gibt. */
   $('#etSave').classList.toggle('btn-primary', an);
   $('#etSave').classList.toggle('ruht', !an);
+  $('#etSave').textContent = an ? 'Speichern' : 'Gespeichert';
   stand(an ? 'nicht gespeichert' : 'gespeichert', an);
 }
 
@@ -416,9 +417,9 @@ function hilfeZeigen() {
       icon: svg('<path d="M5 3l14 9-6 1-3 6z"/>') },
     { nr: 3, titel: 'Bilder & Videos', text: 'Bild anklicken und am Rahmen auf „Tauschen“ – eigene Fotos oder Videos hochladen.',
       icon: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/>') },
-    { nr: 4, titel: 'Abschnitte hinzufügen', text: 'Das Plus zwischen zwei Abschnitten oder die Kacheln links: Text, Bild, Galerie, Formular …',
+    { nr: 4, titel: 'Abschnitte hinzufügen', text: 'Das Plus zwischen zwei Abschnitten oder die Kacheln links: Text, Bild, Galerie, Formular … – neue Inhalte landen beim gewählten oder sichtbaren Abschnitt.',
       icon: svg('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>') },
-    { nr: 5, titel: 'Gestalten', text: 'Links in der Leiste: Schrift, Größe, Farbe, Ausrichtung – und die Einstellungen jedes Abschnitts.',
+    { nr: 5, titel: 'Gestalten', text: 'Rechts im Panel „Eigenschaften“: Schrift, Größe, Farbe, Ausrichtung – und die Einstellungen jedes Abschnitts.',
       icon: svg('<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 3 0 4-1 1-3 1-4a9 9 0 0 0-7-8Z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/>') },
     { nr: 6, titel: 'Prüfen und speichern', text: 'Mit dem Telefonsymbol die Handy-Ansicht prüfen, dann oben rechts speichern.',
       icon: svg('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.8h2"/><path d="m16 8 2 2 4-4"/>') }
@@ -460,6 +461,8 @@ function hilfeZeigen() {
 $('#etHilfe')?.addEventListener('click', hilfeZeigen);
 if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) { const kb = $('#etBefehle'); if (kb) kb.textContent = 'Strg K'; }
 $('#etBefehle')?.addEventListener('click', () => befehlspalette());
+$('#etTipps')?.addEventListener('click', hilfeZeigen);
+$('#etInspZu')?.addEventListener('click', () => rahmen()?.postMessage({ typ: 'ez-taste', taste: 'esc' }, HERKUNFT));
 try { if (!localStorage.getItem('ez-hilfe')) setTimeout(hilfeZeigen, 600); } catch { /* egal */ }
 
 /* ---------------- Seitenleiste: zwei Bereiche ---------------- */
@@ -804,10 +807,21 @@ const GALERIE_TYPEN = [
 ];
 
 /* Zeigt zum gewaehlten Element die passenden Werkzeuge. */
+const LEER_INSP = `<div class="ei-leer">
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="9" width="36" height="28" rx="4" opacity=".35"/><path d="M14 18h14M14 24h20" opacity=".35"/>
+      <path d="m27 27 4 13 3-5 5 5 3-3-5-5 5-3z" fill="var(--ezui-weiss)"/></svg>
+    <b>Etwas anklicken</b>
+    <span>Wähle auf der Seite einen Text, ein Bild oder einen Abschnitt – hier stellst du dann Schrift, Größe, Farbe und mehr ein.</span>
+  </div>`;
 function elementLeiste(info) {
   const host = $('#etElement');
+  if (document.body.classList.contains('hat-auswahl') !== !!info) {
+    document.body.classList.toggle('hat-auswahl', !!info);
+    requestAnimationFrame(passeGroesseAn);
+  }
   if (!info) {
-    host.innerHTML = '<p class="es-leer">Nichts gewählt – auf der Seite ein Element anklicken.</p>';
+    host.innerHTML = LEER_INSP;
     return;
   }
   if (info.art === 'menue' || info.art === 'fuss') {
@@ -1619,6 +1633,7 @@ window.addEventListener('message', (e) => {
 
 /* ---------------- Start ---------------- */
 (async () => {
+  elementLeiste(null);
   try {
     await ladeSeiten();
     ladeAnker();

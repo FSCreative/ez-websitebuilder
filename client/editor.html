@@ -34,6 +34,7 @@
         <rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect><path d="M11 18.8h2"></path></svg>
     </button>
   </div>
+  <span class="et-platz"></span>
 
   <div class="et-actions">
     <span class="seg et-seg et-verlauf">
@@ -62,7 +63,7 @@
 
     <div class="es-pane" data-tab="seite">
     <!-- Hinzufuegen -->
-    <div class="es-head">Hinzufügen</div>
+    <div class="es-head">Hinzufügen <small>landet beim gewählten oder sichtbaren Abschnitt</small></div>
     <div class="es-kacheln" id="etKacheln">
       <button type="button" data-art="ueberschrift" title="Zwischenüberschrift">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5v14M19 5v14M5 12h14"/></svg><span>Überschrift</span></button>
@@ -88,19 +89,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.5s-.2-1.6-.9-2.3c-.8-.9-1.8-.9-2.2-1C15.8 5 12 5 12 5s-3.8 0-6.9.2c-.4.1-1.4.1-2.2 1C2.2 6.9 2 8.5 2 8.5S1.8 10.4 1.8 12.3v1.7c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.8.9 1.9.9 2.4 1 1.8.2 6.7.2 6.7.2s3.8 0 6.9-.2c.4-.1 1.4-.1 2.2-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8v-1.7c0-1.9-.2-3.8-.2-3.8Z"/><path d="m10 9.5 5 2.8-5 2.8z"/></svg><span>YouTube</span></button>
     </div>
 
-    <!-- Gewaehltes Element -->
-    <div class="es-head" style="margin-top:1rem">Element</div>
-    <div class="es-element" id="etElement">
-      <p class="es-leer">Nichts gewählt – auf der Seite ein Element anklicken.</p>
-    </div>
-
     <!-- Medien -->
-    <div class="es-head" style="margin-top:1rem">Medien</div>
+    <div class="es-head" style="margin-top:.8rem">Medien</div>
     <button class="btn btn-sm" type="button" id="etMedien" style="align-self:flex-start">Bilder &amp; Videos verwalten</button>
 
-    <p class="es-hint">Anklicken und lostippen. Am Rahmen: <b>Verschieben</b> zum Ziehen, Punkte zum Verformen,
-       <b>Tauschen</b> für Bilder, rotes Symbol zum Löschen. Das <b>+</b> zwischen zwei Abschnitten fügt dort
-       einen neuen ein. Rechte Maustaste öffnet das Schnellmenü.</p>
+    <button class="es-tipp" type="button" id="etTipps">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7M12 17.2h.01"/></svg>
+      <span><b>Tipps &amp; Tastenkürzel</b><small>Ziehen, Schnellmenü, ⌘K …</small></span>
+    </button>
     </div>
 
     <div class="es-pane es-pane-design" data-tab="design" hidden>
@@ -139,6 +135,13 @@
       </div>
     </div>
   </main>
+
+  <!-- Eigenschaften des gewaehlten Elements (wie in Framer/Webflow rechts) -->
+  <aside class="edit-insp" id="etInsp" aria-label="Eigenschaften">
+    <div class="ei-kopf"><span>Eigenschaften</span>
+      <button type="button" class="ei-zu" id="etInspZu" title="Auswahl aufheben (Esc)" aria-label="Schließen">✕</button></div>
+    <div class="es-element" id="etElement"></div>
+  </aside>
 </div>
 
 <!-- ============ Bildauswahl ============ -->
