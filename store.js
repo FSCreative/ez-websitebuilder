@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Ablage fuer neue Websites =========================
+/* ====== FS Creative Websitebuilder – Ablage fuer neue Websites =========================
    Seiteninhalte und Bilder/Videos. Mit DATABASE_URL in Postgres, sonst in
    einer JSON-Datei (data/builder.json) - fuer lokale Tests.
    Das Esszimmer benutzt seine eigene store.js (gleiche Tabellen). Eine neue

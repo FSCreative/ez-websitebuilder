@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Anmeldung & Admin-Auswahl =========================
+/* ====== FS Creative Websitebuilder – Anmeldung & Admin-Auswahl =========================
    Fuer Websites ohne eigene Anmeldung: ein Passwort (EDITOR_PASSWORT), ein
    signiertes Cookie, eine Anmeldeseite und optional eine Auswahlseite, von der
    aus man mehrere Websites bearbeiten kann (config.admin.seiten).

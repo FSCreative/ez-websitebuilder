@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Bausteine fuer Next.js ============================
+/* ====== FS Creative Websitebuilder – Bausteine fuer Next.js ============================
    In die Website kopieren nach src/components/Ez.tsx.
 
    <Ez as="h2" k="start.titel" className="…">Standardtext</Ez>

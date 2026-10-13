@@ -1,4 +1,6 @@
-# EZ Websitebuilder
+# FS Creative Websitebuilder
+
+> **Hinweis zu den Namen:** Das System heißt jetzt *FS Creative Websitebuilder* (früher *EZ Websitebuilder*). Die technischen Namen bleiben unverändert, damit alle bestehenden Websites mit ihren eigenen Zugängen weiterlaufen: Paket und Repository `ez-websitebuilder`, Attribute `data-ez-*`, Variablen `--ez-*`, `window.EZ_SITE`, Cookie `ezb`, Bausteine `Ez`/`EzBild`.
 
 Ein Editor, mit dem Inhaber ihre Website selbst bearbeiten – direkt auf der Seite: anklicken und tippen, Bilder tauschen und zuschneiden, Abschnitte einfügen und verschieben, Menü, Kopf- und Fußzeile, Farben, Schriften und Animationen einstellen.
 

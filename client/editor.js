@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Editor ============================================
+/* ====== FS Creative Websitebuilder – Editor ============================================
    Laeuft unter /website (builder/client/editor.html). Websites erweitern ihn
    mit Plugins (site.config.json -> editor.plugins) ueber window.EZ_EDITOR.
    ----------------------------------------------------------------------------

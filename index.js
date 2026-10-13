@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Server-Modul ======================================
+/* ====== FS Creative Websitebuilder – Server-Modul ======================================
    Alles, was der Website-Editor auf dem Server braucht, in einem Modul:
    Seiteninhalte, Bilder, Videos, Sprungmarken, Formulare, die Editor-Seite
    und das Einbauen gespeicherter Inhalte in die Gaesteseiten.

@@ -1,4 +1,4 @@
-/* Vorlage: kleinste Website mit dem EZ Websitebuilder.
+/* Vorlage: kleinste Website mit dem FS Creative Websitebuilder.
    Start: npm install && EDITOR_PASSWORT=geheim node server.js
    Editor: http://localhost:3000/website  (vorher /login) */
 import express from 'express';

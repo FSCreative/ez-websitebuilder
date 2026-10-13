@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Laufzeit =========================================
+/* ====== FS Creative Websitebuilder – Laufzeit =========================================
    Laeuft auf jeder Seite der Website und im Editor-Rahmen:
    - baut Kopf- und Fusszeile aus der Vorlage der Website (window.EZ_SITE)
    - legt die im Editor gespeicherten Inhalte ueber das HTML

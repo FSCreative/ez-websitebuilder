@@ -1,5 +1,5 @@
 "use client";
-/* ====== EZ Websitebuilder – Laufzeit fuer Next.js ==============================
+/* ====== FS Creative Websitebuilder – Laufzeit fuer Next.js ==============================
    In die Website kopieren nach src/components/EzLaufzeit.tsx und im Layout
    ans Ende von <body> setzen: <EzLaufzeit />
    Laedt die Angaben der Website (/js/ez-site.js) und die Builder-Laufzeit erst,
