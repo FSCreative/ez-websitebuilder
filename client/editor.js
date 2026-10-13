@@ -1228,11 +1228,12 @@ function waehleBild(url) {
   bildSheet(false);
 }
 
-/* Bilder bleiben so scharf wie moeglich: Passt die Datei ins Limit, geht sie
-   unveraendert raus - ohne neues Komprimieren, also ohne Qualitaetsverlust.
-   Erst wenn sie zu gross ist, wird auf 3200 px heruntergerechnet. */
-const MAX_KANTE = 3200;
-const MAX_BYTES = 3.6 * 1024 * 1024;
+/* Schnelle Seiten, scharfe Bilder: Eine Datei, die schon klein genug ist,
+   geht unveraendert raus (Logos und Grafiken als PNG bis 1,5 MB, Fotos bis
+   500 KB). Alles andere wird auf hoechstens 2560 px (reicht fuer Retina-
+   Vollbreite) verkleinert und als WebP gespeichert - meist 70-90 % kleiner. */
+const MAX_KANTE = 2560;
+const MAX_BYTES = 1.2 * 1024 * 1024;
 
 function aufbereiten(datei) {
   return new Promise((fertig, fehler) => {
@@ -1243,23 +1244,27 @@ function aufbereiten(datei) {
       const bild = new Image();
       bild.onerror = () => fehler(new Error('Das ist kein gültiges Bild.'));
       bild.onload = () => {
-        const passt = datei.size <= MAX_BYTES
-          && Math.max(bild.width, bild.height) <= MAX_KANTE;
-        if (passt) return fertig({ dataUrl: quelle, info: `${bild.width}×${bild.height} px, unverändert` });
-
-        let faktor = Math.min(1, MAX_KANTE / Math.max(bild.width, bild.height));
+        const kante = Math.max(bild.width, bild.height);
+        const grenze = datei.type === 'image/png' ? 1.5 * 1024 * 1024 : 500 * 1024;
+        if (datei.size <= grenze && kante <= MAX_KANTE) {
+          return fertig({ dataUrl: quelle, info: `${bild.width}×${bild.height} px, unverändert` });
+        }
+        let faktor = Math.min(1, MAX_KANTE / kante);
+        let qualitaet = 0.82;
         let aus = '';
-        /* Solange verkleinern, bis die Datei ins Limit passt. */
+        /* Erst die Qualitaet, dann die Groesse senken, bis die Datei ins Limit passt. */
         for (let i = 0; i < 6; i++) {
           const c = document.createElement('canvas');
           c.width = Math.round(bild.width * faktor);
           c.height = Math.round(bild.height * faktor);
           c.getContext('2d').drawImage(bild, 0, 0, c.width, c.height);
-          aus = c.toDataURL('image/jpeg', 0.92);
+          aus = c.toDataURL('image/webp', qualitaet);
+          if (!aus.startsWith('data:image/webp')) aus = c.toDataURL('image/jpeg', Math.max(qualitaet, 0.85));   // aeltere Browser
           if (aus.length * 0.75 <= MAX_BYTES) {
-            return fertig({ dataUrl: aus, info: `${c.width}×${c.height} px` });
+            const kb = Math.round(aus.length * 0.75 / 1024);
+            return fertig({ dataUrl: aus, info: `${c.width}×${c.height} px, ${kb} KB (vorher ${Math.round(datei.size / 1024)} KB)` });
           }
-          faktor *= 0.8;
+          if (i % 2 === 0) qualitaet = Math.max(0.6, qualitaet - 0.1); else faktor *= 0.85;
         }
         fertig({ dataUrl: aus, info: 'verkleinert' });
       };
