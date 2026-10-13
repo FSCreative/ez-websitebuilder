@@ -343,7 +343,10 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 
 @media (max-width:1100px){
   .et-tools{margin-left:.4rem}
-  .et-title{display:none}
+  /* Die Seitenauswahl bleibt immer sichtbar, nur der Statustext weicht. */
+  .sitedit .et-title{min-width:0}
+  .sitedit .et-pagesel{max-width:170px}
+  .sitedit #etState{display:none}
 }
 @media (max-width:820px){
   .edit-top{height:54px;padding:.45rem .6rem;gap:.4rem;overflow-x:auto}
@@ -619,3 +622,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
     --ezui-fokus:0 0 0 4px rgba(41,151,255,.3);
   }
 }
+
+/* Befehle-Knopf in der Kopfzeile */
+.sitedit #etBefehle{font:500 12px var(--ezui-mono);color:var(--ezui-leise);border-color:var(--ezui-linie-2)}
+@media (max-width:640px){ .sitedit #etBefehle{display:none} }

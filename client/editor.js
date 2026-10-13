@@ -458,6 +458,8 @@ function hilfeZeigen() {
   box.querySelector('[data-los]').focus();
 }
 $('#etHilfe')?.addEventListener('click', hilfeZeigen);
+if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) { const kb = $('#etBefehle'); if (kb) kb.textContent = 'Strg K'; }
+$('#etBefehle')?.addEventListener('click', () => befehlspalette());
 try { if (!localStorage.getItem('ez-hilfe')) setTimeout(hilfeZeigen, 600); } catch { /* egal */ }
 
 /* ---------------- Seitenleiste: zwei Bereiche ---------------- */
