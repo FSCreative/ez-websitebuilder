@@ -162,3 +162,22 @@ Umgebung: `DATABASE_URL` (Postgres), `EDITOR_PASSWORT`. Mehrere Websites mit dem
 ## Änderungen am System
 
 Änderungen am Builder immer **hier** machen, nie im `node_modules`-Ordner einer Website. Nach einer Änderung übernehmen alle angeschlossenen Websites die neue Fassung innerhalb von etwa 30 Minuten – oder sofort über *Actions → Builder aktualisieren → Run workflow* im jeweiligen Website-Repository.
+
+
+## Zentrale Freischaltung über VALUERO Partner (optional)
+
+Statt eines eigenen `EDITOR_PASSWORT` kann eine Website zentral über **VALUERO Partner**
+(partner.valuero.at) freigeschaltet werden. Dazu im Railway-Service der Website setzen:
+
+| Variable | Wert |
+|---|---|
+| `EZ_ZENTRALE_URL` | `https://partner.valuero.at` |
+| `EZ_SITE_ID` | Site-ID aus VALUERO Partner (Admin → Haus → Website-Baukasten) |
+| `EZ_SITE_KEY` | geheimer Site-Key von dort |
+
+Dann gilt:
+- Gastgeber öffnen den Editor per **Single-Sign-On** aus ihrem Dashboard (Menü „Website“) – kein Passwort nötig.
+- Wird das Haus in der Zentrale gesperrt, ist der Editor nach spätestens 60 s gesperrt (die Website selbst bleibt online).
+- Ist die Zentrale nicht erreichbar, gilt der letzte bekannte Stand (Editor bleibt nutzbar).
+- Ein zusätzlich gesetztes `EDITOR_PASSWORT` funktioniert weiterhin.
+- Ohne diese Variablen ändert sich nichts.
