@@ -172,7 +172,7 @@ Statt eines eigenen `EDITOR_PASSWORT` kann eine Website zentral über **VALUERO 
 | Variable | Wert |
 |---|---|
 | `EZ_ZENTRALE_URL` | `https://partner.valuero.at` |
-| `EZ_SITE_ID` | Site-ID aus VALUERO Partner (Admin → Haus → Website-Baukasten) |
+| `EZ_SITE_ID` | Site-ID aus VALUERO Partner (Admin → Websites, bei Häusern auch Admin → Haus → Website-Baukasten) |
 | `EZ_SITE_KEY` | geheimer Site-Key von dort |
 
 Dann gilt:
@@ -181,3 +181,40 @@ Dann gilt:
 - Ist die Zentrale nicht erreichbar, gilt der letzte bekannte Stand (Editor bleibt nutzbar).
 - Ein zusätzlich gesetztes `EDITOR_PASSWORT` funktioniert weiterhin.
 - Ohne diese Variablen ändert sich nichts.
+
+Voraussetzung: Die Website meldet sich über `einfacheAnmeldung` an (bei Next.js über
+`starteNextMitBuilder()` schon eingebaut). Eine eigene Passwort-Anmeldung wie in `vorlage/server.js`
+kennt die Zentrale nicht:
+
+```js
+import { einfacheAnmeldung } from 'ez-websitebuilder/anmeldung.js';
+const anmeldung = einfacheAnmeldung({ config, name: config.name });
+anmeldung.einbinden(app);
+mountBuilder(app, { config, store, requireStaff: anmeldung.requireStaff, publicDir: './public' });
+```
+
+Websites müssen kein Haus sein: Restaurants, Firmen usw. werden in VALUERO Partner unter
+**Admin → Websites** angelegt und gesperrt bzw. freigeschaltet. Ist eine Website mit einem Haus
+verknüpft, ist der Editor zusätzlich nur nutzbar, solange das Haus aktiv ist.
+
+### Info-Schnittstelle für die Zentrale
+
+Mit `EZ_SITE_ID` und `EZ_SITE_KEY` beantwortet die Website `GET /api/builder/info` – für die
+Übersicht „Websites“ in VALUERO Partner (Fassung, Seiten, letzte Bearbeitung). Jede Abfrage ist
+mit dem Site-Key signiert und höchstens 5 Minuten gültig:
+
+```
+x-ez-sig: <bis>.<hex(hmac_sha256(EZ_SITE_KEY, "info:" + EZ_SITE_ID + ":" + bis)).slice(0, 40)>
+```
+
+Antwort (keine Inhalte):
+
+```json
+{ "version": "1.2.0", "siteId": "krone", "store": "postgres",
+  "lastEdit": "2026-10-21T08:12:00.000Z",
+  "pages": [ { "slug": "index", "title": "Startseite", "updatedAt": "2026-10-21T08:12:00.000Z" } ] }
+```
+
+Ohne die Variablen antwortet die Schnittstelle mit 404, bei falscher oder abgelaufener Signatur mit 401.
+`store` ist `postgres` oder `json` (eigene Ablagen können das mit `export const art = '…'` selbst angeben).
+
