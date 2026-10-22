@@ -276,9 +276,11 @@ const heroAnimation = (function () {
     const f = SCHRIFTEN[id];
     if (!f || !f.google || geladeneSchriften.has(id)) return;
     geladeneSchriften.add(id);
+    /* Vom eigenen Server (siehe index.js, schriftenDienst) - keine Verbindung
+       der Besucher zu Google. */
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.href = `https://fonts.googleapis.com/css2?family=${f.google}&display=swap`;
+    l.href = `/builder/schrift/${id}.css`;
     document.head.appendChild(l);
   }
   const standard = {};      // Ausgangszustand aus der HTML-Datei
@@ -982,6 +984,15 @@ const heroAnimation = (function () {
     }
   }
 
+  /* Videos von YouTube/Vimeo laden erst nach Zustimmung der Besucher:
+     - im Editor (Personal) direkt,
+     - mit FS Consent (window.FSConsent) ueber dessen Platzhalter im Design der Website,
+     - ohne Banner ueber einen eigenen Platzhalter mit "Video laden". */
+  const EINBETTUNG_ALLOW = 'accelerometer; autoplay; encrypted-media; picture-in-picture';
+  const einbettungDienst = (src) => (/vimeo\.com/.test(src) ? 'Vimeo' : 'YouTube');
+  function einbettungIframe(src) {
+    return `<iframe src="${src}" title="Video" loading="lazy" allow="${EINBETTUNG_ALLOW}" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+  }
   function einbettungFuellen(el, id) {
     const host = el.querySelector('.ez-einbettung');
     if (!host) return;
@@ -990,9 +1001,35 @@ const heroAnimation = (function () {
       host.innerHTML = '<p class="ez-einbettung-leer">Video einbetten: links in der Leiste die YouTube- oder Vimeo-Adresse eintragen.</p>';
       return;
     }
-    if (host.querySelector('iframe')?.getAttribute('src') === src) return;
-    host.innerHTML = `<iframe src="${src}" title="Video" loading="lazy" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+    if (host.dataset.ezSrc === src && host.firstElementChild) return;
+    host.dataset.ezSrc = src;
+    const dienst = einbettungDienst(src);
+    const fsc = window.FSConsent;
+    if (document.body.classList.contains('ez-edit') || (fsc && fsc.has('media'))) {
+      host.innerHTML = einbettungIframe(src);
+    } else if (fsc) {
+      host.innerHTML = `<div data-consent-embed="media" data-service="${dienst}" data-title="Video" data-src="${src}"`
+        + ` data-allow="${EINBETTUNG_ALLOW}" data-allowfullscreen data-kind="video"></div>`;
+      if (typeof fsc.scan === 'function') fsc.scan(host);
+    } else {
+      const anbieter = dienst === 'Vimeo' ? 'Vimeo' : 'Google (YouTube)';
+      host.innerHTML = `<div class="ez-einbettung-zustimmung"><p><strong>Video von ${dienst}</strong><br>`
+        + `Beim Laden werden Daten wie die IP-Adresse an ${anbieter} übertragen.</p>`
+        + '<button type="button" class="ez-einbettung-knopf">Video laden</button></div>';
+      host.querySelector('button').addEventListener('click', () => { host.innerHTML = einbettungIframe(src); });
+    }
   }
+  /* FS Consent laedt evtl. erst nach der Laufzeit (Next.js) - dann Platzhalter
+     neu aufbauen; nach einer Zustimmung die Videos laden. */
+  function einbettungenAktualisieren() {
+    if (document.body.classList.contains('ez-edit')) return;
+    document.querySelectorAll('.ezblock[data-block-art="einbettung"]').forEach((b) => {
+      const host = b.querySelector('.ez-einbettung');
+      if (host && !host.querySelector('iframe[src]')) { delete host.dataset.ezSrc; einbettungFuellen(b, b.dataset.block); }
+    });
+  }
+  window.addEventListener('fs-consent:ready', einbettungenAktualisieren);
+  window.addEventListener('fs-consent:change', einbettungenAktualisieren);
 
   /* Der Slider auf der Website: blendet oder schiebt die Bilder im Takt. */
   function sliderStarten(block) {
@@ -1923,6 +1960,12 @@ const heroAnimation = (function () {
 
   function starten() {
     document.body.classList.add('ez-edit');
+    /* Im Editor die echten Videos zeigen (vorher evtl. als Platzhalter gebaut). */
+    document.querySelectorAll('.ezblock[data-block-art="einbettung"]').forEach((b) => {
+      const host = b.querySelector('.ez-einbettung');
+      if (host) delete host.dataset.ezSrc;
+      einbettungFuellen(b, b.dataset.block);
+    });
     hoverEinrichten();
     tastenEinrichten();
     Object.keys(SCHRIFTEN).forEach(schriftLaden);
