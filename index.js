@@ -17,6 +17,7 @@
    Praefix "global." (Kopf- und Fusszeile, Design, Menue) gelten fuer alle
    Seiten und liegen in einem eigenen Satz "_global".                    */
 import express from 'express';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
@@ -24,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const HIER = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT = path.join(HIER, 'client');
+const FASSUNG_PAKET = (() => { try { return JSON.parse(fs.readFileSync(path.join(HIER, 'package.json'), 'utf8')).version || ''; } catch { return ''; } })();
 
 export function ladeKonfiguration(datei) {
   const roh = JSON.parse(fs.readFileSync(datei, 'utf8'));
@@ -127,6 +129,35 @@ export function mountBuilder(app, opts) {
     felderSpeicher.set(slug, { zeit: Date.now(), werte });
     return werte;
   };
+
+  /* ---------------- Info fuer die Zentrale (VALUERO Partner) ----------------
+     Nur mit EZ_SITE_ID + EZ_SITE_KEY. Die Zentrale signiert jede Abfrage mit dem
+     Site-Key:  x-ez-sig: <bis>.<hmac(key, "info:" + siteId + ":" + bis).slice(0, 40)>
+     (hoechstens 5 Minuten gueltig). Liefert Fassung, Seiten und letzte Bearbeitung -
+     keine Inhalte. Ohne die Variablen: 404, wie bisher. */
+  const infoId = String(opts.siteId ?? process.env.EZ_SITE_ID ?? '');
+  const infoKey = String(opts.siteKey ?? process.env.EZ_SITE_KEY ?? '');
+  app.get('/api/builder/info', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    if (!infoId || !infoKey) return res.status(404).json({ error: 'Nicht gefunden' });
+    const [bis, sig] = String(req.get('x-ez-sig') || '').split('.');
+    const jetzt = Date.now();
+    const soll = crypto.createHmac('sha256', infoKey).update(`info:${infoId}:${Number(bis)}`).digest('hex').slice(0, 40);
+    const ok = !!sig && Number(bis) > jetzt && Number(bis) <= jetzt + 5 * 60000
+      && sig.length === soll.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(soll));
+    if (!ok) return res.status(401).json({ error: 'Nicht berechtigt' });
+    let gespeichert = [];
+    try { gespeichert = await store.listPages(); } catch { /* Ablage nicht erreichbar */ }
+    const zeiten = new Map(gespeichert.map((p) => [p.slug, p.updatedAt ? new Date(p.updatedAt).toISOString() : null]));
+    const alle = [...zeiten.values()].filter(Boolean).sort();
+    res.json({
+      version: FASSUNG_PAKET,
+      siteId: infoId,
+      pages: PAGES.map((p) => ({ slug: p.slug, title: p.titel || p.slug, updatedAt: zeiten.get(p.slug) || null })),
+      lastEdit: alle.length ? alle[alle.length - 1] : null,
+      store: store.art || (process.env.DATABASE_URL ? 'postgres' : 'json')
+    });
+  });
 
   /* ---------------- Seiten ---------------- */
   app.get('/api/builder/config', requireStaff, (req, res) => {

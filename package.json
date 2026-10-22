@@ -1,6 +1,6 @@
 {
   "name": "ez-websitebuilder",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "FS Creative Websitebuilder – Websites direkt auf der Seite bearbeiten (Editor, Blöcke, Bilder, Menü, Design, Animationen)",
   "type": "module",
   "main": "index.js",

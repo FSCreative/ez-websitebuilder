@@ -10,6 +10,7 @@ import path from 'node:path';
 
 const DATEI = path.join(process.env.DATA_DIR || path.resolve('data'), 'builder.json');
 const usePg = !!process.env.DATABASE_URL;
+export const art = usePg ? 'postgres' : 'json';
 let pool = null;
 
 const lesen = () => { try { return JSON.parse(fs.readFileSync(DATEI, 'utf8')); } catch { return { pages: {}, images: {} }; } };
@@ -36,11 +37,12 @@ export async function savePage(slug, data) {
       ON CONFLICT (slug) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`, [slug, JSON.stringify(data)]);
     return data;
   }
-  const db = lesen(); db.pages[slug] = data; schreiben(db); return data;
+  const db = lesen(); db.pages[slug] = data; db.zeiten = { ...(db.zeiten || {}), [slug]: new Date().toISOString() }; schreiben(db); return data;
 }
 export async function listPages() {
   if (usePg) return (await pool.query('SELECT slug, updated_at FROM pages ORDER BY slug')).rows.map((r) => ({ slug: r.slug, updatedAt: r.updated_at }));
-  return Object.keys(lesen().pages).map((slug) => ({ slug, updatedAt: null }));
+  const db = lesen();
+  return Object.keys(db.pages).map((slug) => ({ slug, updatedAt: (db.zeiten || {})[slug] || null }));
 }
 export async function saveImage(id, mime, buffer, name = '') {
   if (usePg) { await pool.query('INSERT INTO images (id, mime, name, bytes) VALUES ($1, $2, $3, $4)', [id, mime, String(name).slice(0, 120), buffer]); return id; }
