@@ -18,12 +18,91 @@
    Seiten und liegen in einem eigenen Satz "_global".                    */
 import express from 'express';
 import fs from 'node:fs';
+import os from 'node:os';
 import zlib from 'node:zlib';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const HIER = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT = path.join(HIER, 'client');
+
+/* ---------------- Schriften lokal ausliefern (statt Google Fonts) ----------------
+   Im Editor waehlbare Schriften laedt der Browser ueber /builder/schrift/<id>.css.
+   Der Server holt CSS und woff2-Dateien einmal selbst bei Google - ohne Daten der
+   Besucher - und liefert sie danach aus seinem Zwischenspeicher. Die Liste der
+   Schriften steht nur einmal, in client/runtime.js (SCHRIFTEN). */
+const SCHRIFT_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+const SCHRIFT_SUBSETS = new Set(['latin', 'latin-ext']);
+const SCHRIFT_ORDNER = path.join(os.tmpdir(), 'ez-websitebuilder-schriften');
+
+export function schriftenAusLaufzeit(js) {
+  const liste = {};
+  const block = /const SCHRIFTEN = \{([\s\S]*?)\n\s*\};/.exec(js);
+  if (!block) return liste;
+  for (const m of block[1].matchAll(/^\s*([a-z0-9]+):\s*\{[^}]*\bgoogle:\s*'([^']+)'/gm)) liste[m[1]] = m[2];
+  return liste;
+}
+
+function schriftenDienst() {
+  let liste = null;
+  const ladend = new Map();      // id -> Promise<css>
+  const dateien = new Map();     // dateiname -> Buffer
+  try { fs.mkdirSync(SCHRIFT_ORDNER, { recursive: true }); } catch { /* nur Arbeitsspeicher */ }
+  const google = (id) => {
+    if (!liste) liste = schriftenAusLaufzeit(fs.readFileSync(path.join(CLIENT, 'runtime.js'), 'utf8'));
+    return liste[id] || null;
+  };
+  async function holen(url) {
+    const r = await fetch(url, { headers: { 'User-Agent': SCHRIFT_UA }, signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return Buffer.from(await r.arrayBuffer());
+  }
+  async function bauen(id, fam) {
+    const cssDatei = path.join(SCHRIFT_ORDNER, id + '.css');
+    try { return fs.readFileSync(cssDatei, 'utf8'); } catch { /* noch nicht da */ }
+    const roh = (await holen(`https://fonts.googleapis.com/css2?family=${fam}&display=swap`)).toString('utf8');
+    const teile = [];
+    for (const [, subset, regel] of roh.matchAll(/\/\*\s*([\w-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g)) {
+      if (!SCHRIFT_SUBSETS.has(subset)) continue;
+      const url = (/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.woff2)\)/.exec(regel) || [])[1];
+      if (!url) continue;
+      const name = id + '-' + crypto.createHash('sha1').update(url).digest('hex').slice(0, 12) + '.woff2';
+      if (!dateien.has(name)) {
+        let buf;
+        try { buf = fs.readFileSync(path.join(SCHRIFT_ORDNER, name)); } catch { buf = await holen(url); }
+        dateien.set(name, buf);
+        try { fs.writeFileSync(path.join(SCHRIFT_ORDNER, name), buf); } catch { /* egal */ }
+      }
+      teile.push(`/* ${subset} */\n` + regel.replace(url, '/builder/schrift/datei/' + name));
+    }
+    if (!teile.length) throw new Error('keine Schriftdateien');
+    const css = '/* Lokal ausgeliefert (Google Fonts, SIL Open Font License) */\n' + teile.join('\n');
+    try { fs.writeFileSync(cssDatei, css); } catch { /* egal */ }
+    return css;
+  }
+  return {
+    css(req, res) {
+      const id = String(req.params.id || '');
+      const fam = /^[a-z0-9]+$/.test(id) && google(id);
+      if (!fam) return res.status(404).type('text/css').send('/* unbekannte Schrift */');
+      if (!ladend.has(id)) ladend.set(id, bauen(id, fam).catch((e) => { ladend.delete(id); throw e; }));
+      ladend.get(id).then(
+        (css) => res.set('Cache-Control', 'public, max-age=86400').type('text/css').send(css),
+        (e) => {
+          console.warn('[builder] Schrift ' + id + ' nicht verfügbar:', e.message);
+          res.status(503).set('Cache-Control', 'no-store').type('text/css').send('/* Schrift vorübergehend nicht verfügbar */');
+        });
+    },
+    datei(req, res) {
+      const name = String(req.params.name || '');
+      if (!/^[a-z0-9]+-[0-9a-f]{12}\.woff2$/.test(name)) return res.status(404).end();
+      let buf = dateien.get(name);
+      if (!buf) { try { buf = fs.readFileSync(path.join(SCHRIFT_ORDNER, name)); dateien.set(name, buf); } catch { return res.status(404).end(); } }
+      res.set({ 'Content-Type': 'font/woff2', 'Cache-Control': 'public, max-age=31536000, immutable' }).send(buf);
+    }
+  };
+}
 
 export function ladeKonfiguration(datei) {
   const roh = JSON.parse(fs.readFileSync(datei, 'utf8'));
@@ -382,6 +461,9 @@ export function mountBuilder(app, opts) {
   const mitFassung = (html) => html.replace(/(href|src)="(\/(?:css|js|builder)\/[^"?]+)"/g, `$1="$2?v=${FASSUNG}"`);
   /* Skripte und Stile: komprimiert und - mit Fassungs-Kennung (?v=) - ein Jahr
      lang im Browser behalten; ohne Kennung bleibt es bei no-cache. */
+  const schriften = schriftenDienst();
+  app.get('/builder/schrift/datei/:name', schriften.datei);
+  app.get('/builder/schrift/:id.css', schriften.css);
   const vorKomprimiert = new Map();
   const MIME = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
   app.use('/builder', (req, res, next) => {
