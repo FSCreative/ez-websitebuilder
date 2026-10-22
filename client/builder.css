@@ -157,8 +157,8 @@
   text-align:center;color:rgba(255,255,255,.85);font-size:.92rem;line-height:1.5}
 .ez-einbettung-zustimmung p{margin:0;max-width:34rem}
 .ez-einbettung-zustimmung strong{color:#fff;font-size:1.05em}
-.ez-einbettung-knopf{appearance:none;border:0;border-radius:999px;padding:.75em 1.6em;background:var(--ez-akzent);color:#fff;
-  font:inherit;font-weight:600;cursor:pointer}
+.ez-einbettung-knopf{appearance:none;border:1.5px solid rgba(255,255,255,.6);border-radius:999px;padding:.75em 1.6em;
+  background:var(--ez-akzent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
 .ez-einbettung-knopf:hover{filter:brightness(1.1)}
 .ez-einbettung-knopf:focus-visible{outline:2px solid #fff;outline-offset:3px}
 /* Formular-Block */
