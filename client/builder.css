@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Stile fuer die Website ============================
+/* ====== FS Creative Websitebuilder – Stile fuer die Website ============================
    Wird vor dem Stylesheet der Website geladen:
      <link rel="stylesheet" href="/builder/builder.css">
      <link rel="stylesheet" href="/css/style.css">
@@ -237,6 +237,8 @@ html[data-fusslayout="zentriert"] .sf-base{text-align:center}
 .ez-bgvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 [data-ez-bg]:has(> .ez-bgvideo){overflow:hidden}
 body:not(.ez-edit) .ez-versteckt{display:none !important}
+/* Hervorgehobenes Wort im Text (EZ_SITE.akzentKlasse: true) */
+.ez-akzent{color:var(--ez-akzent)}
 .ez-anker{display:block;height:0;position:relative}
 html:has(> body.guestpage:not(.ez-edit)){scroll-behavior:smooth}
 

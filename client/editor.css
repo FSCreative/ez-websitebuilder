@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Editor ============================================
+/* ====== FS Creative Websitebuilder – Editor ============================================
    Eigenstaendig: braucht kein Stylesheet der Website. Gestaltung im Stil
    von macOS/iOS - Systemschrift, Milchglas, feine Linien, System-Blau.
    ============================================================================ */
@@ -33,7 +33,7 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
   border-radius:var(--ezui-radius-s);border:.5px solid var(--ezui-linie-2);background:var(--ezui-weiss);color:var(--ezui-text);
   font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap;box-shadow:var(--ezui-schatten-s);
   transition:background .15s,border-color .15s,box-shadow .15s,transform .1s}
-.sitedit .btn:hover{background:#fafafa;border-color:rgba(0,0,0,.22)}
+.sitedit .btn:hover{background:var(--ezui-btnhover,#fafafa);border-color:var(--ezui-linie-2)}
 .sitedit .btn:active{transform:scale(.97)}
 .sitedit .btn:focus-visible{outline:none;box-shadow:var(--ezui-fokus)}
 .sitedit .btn:disabled{opacity:.4;cursor:default;transform:none}
@@ -61,7 +61,7 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
 .sitedit .seg{display:inline-flex;gap:2px;padding:2px;background:var(--ezui-flaeche);border-radius:9px;border:0}
 .sitedit .seg button{flex:1;border:0;background:transparent;border-radius:7px;padding:.3rem .7rem;min-height:26px;
   font-size:12.5px;font-weight:500;color:var(--ezui-text);transition:background .15s,box-shadow .15s}
-.sitedit .seg button:hover{background:rgba(255,255,255,.55)}
+.sitedit .seg button:hover{background:var(--ezui-hover,rgba(255,255,255,.55))}
 .sitedit .seg button[aria-pressed="true"]{background:var(--ezui-weiss);color:var(--ezui-text);
   box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.05)}
 
@@ -96,21 +96,21 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
 /* ---------------- Editor-Bereiche ---------------- */
 /* Editor: Formularfelder-Leiste */
 .es-formfelder{display:flex;flex-direction:column;gap:.4rem}
-.es-formfeld{display:grid;grid-template-columns:1fr auto;gap:.3rem;padding:.45rem;border:1px solid var(--ezui-linie);border-radius:9px;background:#fff}
+.es-formfeld{display:grid;grid-template-columns:1fr auto;gap:.3rem;padding:.45rem;border:1px solid var(--ezui-linie);border-radius:9px;background:var(--ezui-weiss)}
 .es-formfeld .input{padding:.3rem .45rem;font-size:.8rem}
 .es-formfeld select.input{grid-column:1/-1}
 .es-formfeld [data-feld="optionen"]{grid-column:1/-1}
 .es-pflicht{display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:var(--ezui-text-2);grid-column:1}
-.es-formweg{width:24px;height:24px;border-radius:50%;border:1px solid var(--ezui-linie-2);background:#fff;color:var(--ezui-rot,#B4443C);
+.es-formweg{width:24px;height:24px;border-radius:50%;border:1px solid var(--ezui-linie-2);background:var(--ezui-weiss);color:var(--ezui-rot,#B4443C);
   cursor:pointer;font-size:.7rem;line-height:1;padding:0;grid-column:2;justify-self:end}
 .es-formfeld > .input:first-child{grid-column:1}
 /* Editor: Schriftauswahl mit Vorschau */
 .es-schrift{position:relative}
 .es-schrift-knopf{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;
-  border:1px solid var(--ezui-linie-2);border-radius:10px;background:#fff;padding:.5rem .7rem;font-size:1rem;cursor:pointer;color:var(--ezui-text)}
+  border:1px solid var(--ezui-linie-2);border-radius:10px;background:var(--ezui-weiss);padding:.5rem .7rem;font-size:1rem;cursor:pointer;color:var(--ezui-text)}
 .es-schrift-knopf span{font-family:var(--ezui-font);font-size:.7rem;color:var(--ezui-leise)}
 .es-schrift-liste{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;max-height:320px;overflow:auto;
-  background:#fff;border:1px solid var(--ezui-linie);border-radius:10px;box-shadow:var(--ezui-schatten);padding:.3rem}
+  background:var(--ezui-weiss);border:1px solid var(--ezui-linie);border-radius:10px;box-shadow:var(--ezui-schatten);padding:.3rem}
 .es-schrift-liste button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:.45rem .6rem;
   border-radius:7px;font-size:1.05rem;cursor:pointer;color:var(--ezui-text)}
 .es-schrift-liste button:hover{background:var(--ezui-flaeche)}
@@ -119,7 +119,7 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
 .ez-hinweisfenster .es-hilfe{text-align:left;width:min(56rem,calc(100vw - 2rem));max-width:none;position:relative;
   padding:2rem 2.2rem 1.6rem;border-radius:22px}
 .es-hilfe-zu{position:absolute;top:.9rem;right:1rem;width:34px;height:34px;border-radius:50%;border:1px solid var(--ezui-linie);
-  background:#fff;color:var(--ezui-leise);cursor:pointer;font-size:.95rem}
+  background:var(--ezui-weiss);color:var(--ezui-leise);cursor:pointer;font-size:.95rem}
 .es-hilfe-zu:hover{color:var(--ezui-tint);border-color:var(--ezui-tint)}
 .es-hilfe-kopf{margin-bottom:1.4rem;padding-right:2.5rem}
 .es-hilfe-marke{display:inline-block;font:600 .6rem/1 var(--ezui-mono);letter-spacing:.16em;text-transform:uppercase;
@@ -155,12 +155,12 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
 .es-design-kopf b{font-size:.95rem;font-weight:600}
 .es-design-kopf span{font-size:.74rem;line-height:1.45;color:rgba(255,255,255,.85)}
 .es-design-kopf u{text-decoration-color:var(--ezui-gold,#B08D57);text-underline-offset:2px}
-.es-pane-design .es-design details{background:#fff;border-color:var(--ezui-tint-linie)}
+.es-pane-design .es-design details{background:var(--ezui-weiss);border-color:var(--ezui-tint-linie)}
 .es-pane-design .es-design summary{color:var(--ezui-tint)}
 /* Editor: Website-Design */
 .es-design{display:flex;flex-direction:column;gap:.55rem}
 .es-farbfeld{display:flex;align-items:center;gap:.5rem}
-.es-farbfeld input[type="color"]{width:38px;height:30px;border:1px solid var(--ezui-linie-2);border-radius:8px;padding:2px;background:#fff;cursor:pointer}
+.es-farbfeld input[type="color"]{width:38px;height:30px;border:1px solid var(--ezui-linie-2);border-radius:8px;padding:2px;background:var(--ezui-weiss);cursor:pointer}
 .es-farbfeld code{font-family:var(--ezui-mono);font-size:.68rem;color:var(--ezui-leise)}
 .es-farbfeld .btn{margin-left:auto}
 /* Editor: Farbpalette */
@@ -168,12 +168,12 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
 .es-farbe.ist-aktiv{border-color:var(--ezui-tint);box-shadow:0 0 0 2px #fff,0 0 0 3px var(--ezui-tint)}
 /* Editor: Menue-Eintraege */
 .es-menue{display:flex;flex-direction:column;gap:.35rem}
-.es-menue-zeile{display:grid;grid-template-columns:1fr auto auto;gap:.3rem;align-items:center;padding:.4rem;border:1px solid var(--ezui-linie);border-radius:9px;background:#fff}
+.es-menue-zeile{display:grid;grid-template-columns:1fr auto auto;gap:.3rem;align-items:center;padding:.4rem;border:1px solid var(--ezui-linie);border-radius:9px;background:var(--ezui-weiss)}
 .es-menue-zeile .input{padding:.3rem .45rem;font-size:.8rem}
 .es-menue-zeile [data-m="link"]{grid-column:1/-1}
 .es-menue-zeile .es-knopfhaken{font-size:.68rem;color:var(--ezui-text-2);display:flex;align-items:center;gap:.25rem;white-space:nowrap}
 .es-menue-zeile .es-pfeile{display:flex;gap:.15rem}
-.es-menue-zeile .es-pfeile button,.es-menue-zeile .es-formweg{width:24px;height:24px;border-radius:6px;border:1px solid var(--ezui-linie-2);background:#fff;cursor:pointer;font-size:.7rem;padding:0;color:var(--ezui-text-2)}
+.es-menue-zeile .es-pfeile button,.es-menue-zeile .es-formweg{width:24px;height:24px;border-radius:6px;border:1px solid var(--ezui-linie-2);background:var(--ezui-weiss);cursor:pointer;font-size:.7rem;padding:0;color:var(--ezui-text-2)}
 .es-menue-zeile .es-formweg{color:var(--ezui-rot,#B4443C);border-radius:50%}
 .es-abschnitt{border:1px solid var(--ezui-linie);border-radius:12px;padding:.7rem;display:flex;flex-direction:column;gap:.5rem;background:var(--ezui-flaeche-2)}
 .es-abschnitt > .es-label{margin-bottom:.1rem}
@@ -184,7 +184,7 @@ body.sitedit{font:13px/1.45 var(--ezui-font);color:var(--ezui-text);background:v
 .es-design summary::-webkit-details-marker{display:none}
 .es-design details > div{padding:.2rem .8rem .8rem;display:flex;flex-direction:column;gap:.55rem}
 body[data-tab] .topbar,body[data-tab] .edit-top{
-  background:rgba(255,255,255,.72);
+  background:var(--ezui-glas);
   -webkit-backdrop-filter:saturate(180%) blur(20px);
   backdrop-filter:saturate(180%) blur(20px);
   border-bottom:1px solid rgba(0,0,0,.07);
@@ -219,14 +219,14 @@ body.sitedit{height:100vh;overflow:hidden;background:#EDEDF2}
 body.preview .et-tools{opacity:.35;pointer-events:none}
 /* Hinweis mit Knopf */
 .toast-aktion{display:flex;align-items:center;gap:.8rem}
-.toast-aktion .btn{background:#fff;color:var(--ezui-tint);border-color:#fff;padding:.3rem .7rem;min-height:30px}
+.toast-aktion .btn{background:var(--ezui-weiss);color:var(--ezui-tint);border-color:#fff;padding:.3rem .7rem;min-height:30px}
 /* Element-Leiste: Farbwaehler */
-#etElement input[type="color"]{width:34px;height:28px;border:1px solid var(--ezui-linie-2);border-radius:8px;padding:2px;background:#fff;cursor:pointer}
+#etElement input[type="color"]{width:34px;height:28px;border:1px solid var(--ezui-linie-2);border-radius:8px;padding:2px;background:var(--ezui-weiss);cursor:pointer}
 
 /* Hinweisfenster im Editor - muss bewusst weggeklickt werden */
 .ez-hinweisfenster{position:fixed;inset:0;z-index:200;background:rgba(25,22,62,.45);
   display:grid;place-items:center;padding:1rem}
-.ez-hf-inner{width:min(28rem,100%);background:#fff;border-radius:16px;padding:1.6rem;
+.ez-hf-inner{width:min(28rem,100%);background:var(--ezui-weiss);border-radius:16px;padding:1.6rem;
   box-shadow:var(--ezui-schatten);text-align:center}
 .ez-hf-inner h3{font-family:var(--ezui-font);font-size:1.05rem;font-weight:400;letter-spacing:.03em;
   color:var(--ezui-tint);margin:0 0 .6rem}
@@ -277,7 +277,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .es-wert{font-family:var(--ezui-mono);font-size:.7rem;min-width:3.2rem;text-align:center}
 .es-px{display:inline-flex;align-items:center;gap:.2rem;height:30px;padding:0 .5rem 0 .2rem;border-radius:8px;background:rgba(118,118,128,.12);font-size:.72rem;color:var(--ezui-leise,#86868b)}
 .es-px input{width:3.2rem;border:0;background:transparent;font:inherit;font-size:.82rem;font-weight:600;color:var(--ezui-text,#1d1d1f);text-align:right;outline:none;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
-.es-px:focus-within{box-shadow:0 0 0 3px rgba(0,113,227,.25);background:#fff}
+.es-px:focus-within{box-shadow:0 0 0 3px rgba(0,113,227,.25);background:var(--ezui-weiss)}
 .es-feld{display:flex;flex-direction:column;gap:.25rem}
 .es-feld > span{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ezui-leise)}
 .es-feld .input,.es-feld select.input{padding:.4rem .55rem;font-size:.85rem;width:100%}
@@ -301,7 +301,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
    so stimmen Abstaende und Umbrueche mit der echten Website ueberein. */
 .scaler{transform-origin:top left;width:1440px}
 .scaler iframe{width:100%;height:100%;border:0;display:block}
-.edit-busy{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.75);z-index:3}
+.edit-busy{position:absolute;inset:0;display:grid;place-items:center;background:var(--ezui-glas);z-index:3}
 .edit-busy span{width:26px;height:26px;border:2px solid var(--ezui-tint-linie);
   border-top-color:var(--ezui-tint);border-radius:50%;animation:ezspin .7s linear infinite}
 
@@ -313,7 +313,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
              inset 0 0 0 1px rgba(255,255,255,.08)}
 .phone .notch{position:absolute;top:13px;left:50%;transform:translateX(-50%);
   width:108px;height:26px;background:#0b0b10;border-radius:999px;z-index:2}
-.phone .screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:#fff}
+.phone .screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:var(--ezui-weiss)}
 .phone .screen iframe{width:100%;height:100%;border:0;display:block}
 /* Der Bereich der Dynamic Island - im Mockup sichtbar gemacht, damit man
    beim Bearbeiten sieht, was am echten Geraet verdeckt waere. */
@@ -343,7 +343,10 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 
 @media (max-width:1100px){
   .et-tools{margin-left:.4rem}
-  .et-title{display:none}
+  /* Die Seitenauswahl bleibt immer sichtbar, nur der Statustext weicht. */
+  .sitedit .et-title{min-width:0}
+  .sitedit .et-pagesel{max-width:170px}
+  .sitedit #etState{display:none}
 }
 @media (max-width:820px){
   .edit-top{height:54px;padding:.45rem .6rem;gap:.4rem;overflow-x:auto}
@@ -366,7 +369,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
    nebenbei weiter auf der Seite klicken kann. */
 .nd{left:1rem;right:auto;top:72px;margin:0;width:min(600px,calc(100vw - 2rem));max-height:calc(100vh - 90px);
   border:1px solid var(--ezui-tint-linie);box-shadow:0 24px 60px -20px rgba(25,22,62,.45),0 0 0 1px rgba(25,22,62,.04)}
-.nd-kopf{position:sticky;top:0;z-index:2;background:#fff}
+.nd-kopf{position:sticky;top:0;z-index:2;background:var(--ezui-weiss)}
 .nd .sheet-head{padding:.8rem 1rem .7rem;position:static;cursor:grab;user-select:none}
 .nd .sheet-head:active{cursor:grabbing}
 .nd .sheet-head h2{font-size:.8rem}
@@ -377,7 +380,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
   border:1px solid transparent;border-radius:10px;background:transparent;font-size:.66rem;font-weight:600;
   color:var(--ezui-text-2);cursor:pointer;line-height:1.2}
 .nd-tabs button svg{width:20px;height:20px}
-.nd-tabs button:hover{background:#fff;border-color:var(--ezui-linie)}
+.nd-tabs button:hover{background:var(--ezui-weiss);border-color:var(--ezui-linie)}
 .nd-tabs button[aria-pressed="true"]{background:var(--ezui-tint);color:#fff;border-color:var(--ezui-tint)}
 .nd-body{padding:1rem 1.1rem 1.1rem;display:flex;flex-direction:column;gap:.85rem}
 .nd-hinweis{display:flex;gap:.55rem;align-items:flex-start;padding:.6rem .75rem;border-radius:10px;
@@ -390,13 +393,13 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .nd-body .es-feld .input,.nd-body .es-feld select.input{padding:.45rem .6rem;font-size:.86rem}
 .nd-liste{display:flex;flex-direction:column;gap:.4rem}
 .nd-zeile{display:grid;grid-template-columns:auto 1fr 1fr auto auto;gap:.4rem .5rem;align-items:center;
-  padding:.45rem .6rem;border:1px solid var(--ezui-linie);border-radius:10px;background:#fff}
-.nd-zeile.ist-knopf{border-color:var(--ezui-gold,#B08D57);background:#fdfaf4}
+  padding:.45rem .6rem;border:1px solid var(--ezui-linie);border-radius:10px;background:var(--ezui-weiss)}
+.nd-zeile.ist-knopf{border-color:var(--ezui-gold,#B08D57);background:var(--ezui-gold-hell,#fdfaf4)}
 .nd-zeile .nd-nr{font-family:var(--ezui-mono);font-size:.68rem;color:var(--ezui-leise);width:1.2rem;text-align:center}
 .nd-zeile .input{padding:.38rem .5rem;font-size:.84rem;width:100%}
 .nd-zeile .nd-eigen{grid-column:2/-1}
 .nd-zeile .nd-werkzeuge{display:flex;gap:.2rem}
-.nd-zeile .nd-werkzeuge button{width:28px;height:28px;border:1px solid var(--ezui-linie);border-radius:7px;background:#fff;
+.nd-zeile .nd-werkzeuge button{width:28px;height:28px;border:1px solid var(--ezui-linie);border-radius:7px;background:var(--ezui-weiss);
   cursor:pointer;font-size:.82rem;display:grid;place-items:center;color:var(--ezui-text-2);padding:0}
 .nd-zeile .nd-werkzeuge button:hover{border-color:var(--ezui-tint);color:var(--ezui-tint)}
 .nd-zeile .nd-werkzeuge button.weg:hover{border-color:var(--ezui-rot,#B4443C);color:var(--ezui-rot,#B4443C)}
@@ -404,11 +407,11 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .nd-zeile .nd-knopfhaken{display:inline-flex;align-items:center;gap:.3rem;font-size:.66rem;font-weight:600;letter-spacing:.04em;
   color:var(--ezui-leise);cursor:pointer;padding:.3rem .5rem;border:1px solid var(--ezui-linie);border-radius:99px;white-space:nowrap;user-select:none}
 .nd-zeile .nd-knopfhaken input{margin:0;accent-color:var(--ezui-gold,#B08D57)}
-.nd-zeile.ist-knopf .nd-knopfhaken{border-color:var(--ezui-gold,#B08D57);color:var(--ezui-gold,#B08D57);background:#fff}
+.nd-zeile.ist-knopf .nd-knopfhaken{border-color:var(--ezui-gold,#B08D57);color:var(--ezui-gold,#B08D57);background:var(--ezui-weiss)}
 .nd-neu{align-self:flex-start}
 .nd-karten{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
 .nd-karten button{display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.55rem .45rem;
-  border:1.5px solid var(--ezui-linie);border-radius:10px;background:#fff;cursor:pointer;font-size:.7rem;font-weight:500;color:var(--ezui-text-2)}
+  border:1.5px solid var(--ezui-linie);border-radius:10px;background:var(--ezui-weiss);cursor:pointer;font-size:.7rem;font-weight:500;color:var(--ezui-text-2)}
 .nd-karten button[aria-pressed="true"]{border-color:var(--ezui-tint);background:var(--ezui-tint-hell);color:var(--ezui-tint)}
 .nd-probe{width:100%;height:38px;border-radius:6px;border:1px solid var(--ezui-linie);display:flex;flex-direction:column;
   justify-content:center;gap:4px;padding:0 8px}
@@ -416,15 +419,15 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .nd-probe i:nth-child(2){width:45%}
 .nd-probe.dunkel{background:var(--ezui-text);color:#fff}
 .nd-probe.akzent{background:var(--ezui-tint);color:#fff}
-.nd-probe.hell{background:#fff;color:var(--ezui-text)}
-.nd-fuss{display:flex;gap:.6rem;padding:.7rem 1.1rem;border-top:1px solid var(--ezui-linie);background:#fff;
+.nd-probe.hell{background:var(--ezui-weiss);color:var(--ezui-text)}
+.nd-fuss{display:flex;gap:.6rem;padding:.7rem 1.1rem;border-top:1px solid var(--ezui-linie);background:var(--ezui-weiss);
   align-items:center;position:sticky;bottom:0}
 .nd-fuss .mut{margin:0;font-size:.72rem;flex:1;line-height:1.4}
 .nd-handy{display:flex;align-items:center;gap:.7rem;padding:.7rem .8rem;border:1px dashed var(--ezui-tint-linie);border-radius:10px}
 .nd-handy p{margin:0;font-size:.76rem;line-height:1.45;color:var(--ezui-text-2);flex:1}
 .nd-zurueck{align-self:flex-start;font-size:.7rem}
 /* Karte in der Seitenleiste, die das Fenster oeffnet */
-.es-nd{display:flex;flex-direction:column;gap:.5rem;padding:.75rem .8rem;border:1px solid var(--ezui-tint-linie);border-radius:12px;background:#fff}
+.es-nd{display:flex;flex-direction:column;gap:.5rem;padding:.75rem .8rem;border:1px solid var(--ezui-tint-linie);border-radius:12px;background:var(--ezui-weiss)}
 .es-nd b{font-size:.82rem;font-weight:600;color:var(--ezui-tint)}
 .es-nd span{font-size:.72rem;line-height:1.45;color:var(--ezui-leise)}
 .es-nd-knoepfe{display:grid;grid-template-columns:1fr 1fr;gap:.35rem}
@@ -437,7 +440,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
   .nd-zeile{grid-template-columns:auto 1fr auto auto}
   .nd-zeile .nd-link,.nd-zeile .nd-eigen{grid-column:2/-1}
 }
-.es-anker{display:flex;flex-direction:column;gap:.4rem;padding:.6rem .65rem;border:1px dashed var(--ezui-tint-linie);border-radius:10px;background:#fff}
+.es-anker{display:flex;flex-direction:column;gap:.4rem;padding:.6rem .65rem;border:1px dashed var(--ezui-tint-linie);border-radius:10px;background:var(--ezui-weiss)}
 .es-anker.pocht{animation:pocht 1.5s ease}
 .es-anker .es-zeile .input{font-family:var(--ezui-mono);font-size:.8rem}
 .es-anker code{font-family:var(--ezui-mono);font-size:.7rem;color:var(--ezui-tint);background:var(--ezui-tint-hell);padding:.2rem .45rem;border-radius:6px;word-break:break-all}
@@ -465,7 +468,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .sitedit .edit-top > .btn:first-child:hover{background:var(--ezui-tint-hell)}
 .sitedit .et-title{flex-direction:row;align-items:center;gap:.6rem;min-width:0}
 .sitedit .et-pagesel{font-weight:600;font-size:13.5px;min-height:30px;max-width:280px;border-color:transparent;background-color:var(--ezui-flaeche);box-shadow:none}
-.sitedit .et-pagesel:hover{background-color:#e3e3e8}
+.sitedit .et-pagesel:hover{background-color:var(--ezui-flaeche)}
 .sitedit #etState{font-size:12px;color:var(--ezui-leise);white-space:nowrap}
 .sitedit #etState.warn{color:var(--ezui-gold);font-weight:600}
 .sitedit #etState.warn::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ezui-gold);margin-right:.35rem;vertical-align:1px}
@@ -479,7 +482,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 
 /* Arbeitsflaeche */
 .sitedit .edit-wrap{display:grid;grid-template-columns:288px 1fr;height:calc(100vh - 52px)}
-.sitedit .edit-side{background:rgba(246,246,248,.9);border-right:.5px solid var(--ezui-linie);padding:.9rem .8rem 1.2rem;gap:.35rem;overflow:auto}
+.sitedit .edit-side{background:var(--ezui-side,rgba(246,246,248,.9));border-right:.5px solid var(--ezui-linie);padding:.9rem .8rem 1.2rem;gap:.35rem;overflow:auto}
 .sitedit .edit-main{background:var(--ezui-grund)}
 .sitedit .edit-frame{padding:14px}
 .sitedit .edit-frame .scaler{border-radius:12px;overflow:hidden;box-shadow:0 12px 40px -18px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.1)}
@@ -542,7 +545,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .sitedit .nd-hinweis{background:var(--ezui-flaeche-2);border-radius:10px}
 .sitedit .nd-hinweis svg,.sitedit .nd-hinweis b{color:var(--ezui-tint)}
 .sitedit .nd-zeile{border:.5px solid var(--ezui-linie);border-radius:10px;box-shadow:var(--ezui-schatten-s)}
-.sitedit .nd-zeile.ist-knopf{border-color:rgba(255,159,10,.5);background:#fffaf2}
+.sitedit .nd-zeile.ist-knopf{border-color:rgba(255,159,10,.5);background:var(--ezui-weiss)af2}
 .sitedit .nd-karten button{border-radius:12px;border:.5px solid var(--ezui-linie-2)}
 .sitedit .nd-karten button[aria-pressed="true"]{border-color:var(--ezui-tint);box-shadow:0 0 0 3px var(--ezui-tint-hell);background:var(--ezui-weiss);color:var(--ezui-tint)}
 .sitedit .nd-fuss{background:var(--ezui-glas);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--ezui-linie)}
@@ -571,7 +574,7 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
   background:linear-gradient(to right,transparent 33.2%,rgba(255,255,255,.45) 33.3%,rgba(255,255,255,.45) 33.5%,transparent 33.6%,transparent 66.5%,rgba(255,255,255,.45) 66.6%,rgba(255,255,255,.45) 66.8%,transparent 66.9%),
              linear-gradient(to bottom,transparent 33.2%,rgba(255,255,255,.45) 33.3%,rgba(255,255,255,.45) 33.5%,transparent 33.6%,transparent 66.5%,rgba(255,255,255,.45) 66.6%,rgba(255,255,255,.45) 66.8%,transparent 66.9%)}
 .sitedit .crop-griff{position:absolute;width:18px;height:18px;touch-action:none}
-.sitedit .crop-griff::before{content:"";position:absolute;inset:6px;background:#fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.sitedit .crop-griff::before{content:"";position:absolute;inset:6px;background:var(--ezui-weiss);border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.5)}
 .sitedit .g-nw{left:-9px;top:-9px;cursor:nwse-resize}.sitedit .g-ne{right:-9px;top:-9px;cursor:nesw-resize}
 .sitedit .g-sw{left:-9px;bottom:-9px;cursor:nesw-resize}.sitedit .g-se{right:-9px;bottom:-9px;cursor:nwse-resize}
 .sitedit .g-n{left:calc(50% - 9px);top:-9px;cursor:ns-resize}.sitedit .g-s{left:calc(50% - 9px);bottom:-9px;cursor:ns-resize}
@@ -581,3 +584,119 @@ body.preview .et-tools{opacity:.35;pointer-events:none}
 .sitedit .crop-formate button{flex:none;padding:.25rem .6rem}
 .sitedit .crop-werkzeuge{display:flex;gap:.35rem}
 .sitedit .crop-info{margin:0;font-size:12px}
+
+/* Befehlspalette */
+.ez-palette{align-items:flex-start;padding-top:14vh}
+.ez-pal-inner{width:min(34rem,100%);padding:.6rem;border-radius:16px}
+.ez-pal-inner input{width:100%;font:inherit;font-size:1rem;padding:.8rem .9rem;border:0;border-bottom:1px solid var(--ezui-linie);outline:none;background:transparent;color:var(--ezui-text)}
+.ez-pal-inner ul{list-style:none;margin:.4rem 0 0;padding:0;max-height:50vh;overflow:auto}
+.ez-pal-inner li{display:flex;justify-content:space-between;gap:1rem;padding:.6rem .8rem;border-radius:10px;cursor:pointer;color:var(--ezui-text-2)}
+.ez-pal-inner li[aria-selected=true]{background:var(--ezui-tint-hell);color:var(--ezui-text)}
+.ez-pal-inner li.leer{cursor:default;color:var(--ezui-leise)}
+.ez-pal-inner kbd{font:12px var(--ezui-mono);color:var(--ezui-leise)}
+
+/* Dunkles Erscheinungsbild: folgt dem System, umschaltbar ueber die Befehlspalette (⌘/Strg+K). */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ezui-tint:#2997ff; --ezui-tint-dunkel:#0a84ff; --ezui-tint-hell:rgba(41,151,255,.16); --ezui-tint-linie:rgba(41,151,255,.45);
+  --ezui-text:#f5f5f7; --ezui-text-2:#d1d1d6; --ezui-leise:#98989d; --ezui-leise-2:#636366;
+  --ezui-linie:rgba(255,255,255,.1); --ezui-linie-2:rgba(255,255,255,.18);
+  --ezui-grund:#1c1c1e; --ezui-flaeche:#2c2c2e; --ezui-flaeche-2:#232325; --ezui-weiss:#2a2a2d;
+  --ezui-gruen-hell:rgba(52,199,89,.16);
+  --ezui-glas:rgba(28,28,30,.78); --ezui-hover:rgba(255,255,255,.1); --ezui-side:rgba(28,28,30,.92); --ezui-btnhover:#38383b; --ezui-gold-hell:rgba(255,159,10,.14);
+  --ezui-schatten-s:0 1px 2px rgba(0,0,0,.4),0 0 0 .5px rgba(255,255,255,.08);
+  --ezui-schatten:0 22px 70px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.1);
+  --ezui-fokus:0 0 0 4px rgba(41,151,255,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ezui-tint:#2997ff; --ezui-tint-dunkel:#0a84ff; --ezui-tint-hell:rgba(41,151,255,.16); --ezui-tint-linie:rgba(41,151,255,.45);
+    --ezui-text:#f5f5f7; --ezui-text-2:#d1d1d6; --ezui-leise:#98989d; --ezui-leise-2:#636366;
+    --ezui-linie:rgba(255,255,255,.1); --ezui-linie-2:rgba(255,255,255,.18);
+    --ezui-grund:#1c1c1e; --ezui-flaeche:#2c2c2e; --ezui-flaeche-2:#232325; --ezui-weiss:#2a2a2d;
+    --ezui-gruen-hell:rgba(52,199,89,.16);
+    --ezui-glas:rgba(28,28,30,.78); --ezui-hover:rgba(255,255,255,.1); --ezui-side:rgba(28,28,30,.92); --ezui-btnhover:#38383b; --ezui-gold-hell:rgba(255,159,10,.14);
+    --ezui-schatten-s:0 1px 2px rgba(0,0,0,.4),0 0 0 .5px rgba(255,255,255,.08);
+    --ezui-schatten:0 22px 70px -12px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.1);
+    --ezui-fokus:0 0 0 4px rgba(41,151,255,.3);
+  }
+}
+
+/* Befehle-Knopf in der Kopfzeile */
+.sitedit #etBefehle{font:500 12px var(--ezui-mono);color:var(--ezui-leise);border-color:var(--ezui-linie-2)}
+@media (max-width:640px){ .sitedit #etBefehle{display:none} }
+
+/* ================= Aufbau 2: links hinzufuegen, Mitte Seite, rechts Eigenschaften =================
+   Wie in Framer, Webflow oder Figma: wer etwas anklickt, findet die Einstellungen
+   immer an derselben Stelle rechts - ohne zu scrollen. */
+.sitedit .edit-wrap{grid-template-columns:276px minmax(0,1fr) 296px}
+.sitedit .es-tabs button{white-space:nowrap;padding-left:.4rem;padding-right:.4rem}
+.sitedit .es-kacheln button span{white-space:nowrap;font-size:11px}
+.sitedit .edit-insp{background:var(--ezui-side,rgba(246,246,248,.9));border-left:.5px solid var(--ezui-linie);
+  overflow:auto;display:flex;flex-direction:column;min-height:0}
+.sitedit .ei-kopf{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  padding:.85rem .9rem .55rem;background:inherit;font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--ezui-leise)}
+.sitedit .ei-zu{width:24px;height:24px;border-radius:50%;border:0;background:var(--ezui-flaeche);color:var(--ezui-leise);font-size:11px;
+  display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .15s}
+.sitedit.hat-auswahl .ei-zu{opacity:1;pointer-events:auto}
+.sitedit .ei-zu:hover{background:var(--ezui-linie-2);color:var(--ezui-text)}
+.sitedit .edit-insp .es-element{background:transparent;box-shadow:none;border-radius:0;padding:0 .9rem 1.4rem}
+.sitedit .ei-leer{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.45rem;padding:2.6rem 1rem;color:var(--ezui-leise)}
+.sitedit .ei-leer svg{width:56px;height:56px;color:var(--ezui-tint);margin-bottom:.4rem}
+.sitedit .ei-leer b{color:var(--ezui-text);font-size:14px}
+.sitedit .ei-leer span{font-size:12.5px;line-height:1.5;max-width:22ch}
+/* Inhalte des Panels sanft einblenden, wenn eine Auswahl wechselt */
+.sitedit.hat-auswahl .edit-insp .es-element > *{animation:ei-ein .18s ease-out both}
+@keyframes ei-ein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Linke Leiste */
+.sitedit .es-head small{display:block;text-transform:none;letter-spacing:0;font-weight:400;font-size:11px;color:var(--ezui-leise-2);margin-top:.15rem}
+.sitedit .es-kacheln button{padding:.75rem .2rem .6rem}
+.sitedit .es-kacheln button:hover{transform:translateY(-1px)}
+.sitedit .es-tipp{margin-top:auto;display:flex;align-items:center;gap:.65rem;width:100%;text-align:left;padding:.7rem .75rem;
+  border:.5px solid var(--ezui-linie);border-radius:12px;background:var(--ezui-weiss);color:var(--ezui-text-2);box-shadow:var(--ezui-schatten-s)}
+.sitedit .es-tipp svg{width:22px;height:22px;color:var(--ezui-tint);flex:none}
+.sitedit .es-tipp b{display:block;font-size:12.5px;color:var(--ezui-text)}
+.sitedit .es-tipp small{display:block;font-size:11px;color:var(--ezui-leise)}
+.sitedit .es-tipp:hover{border-color:var(--ezui-tint-linie)}
+.sitedit .es-pane[data-tab="seite"]{display:flex;flex-direction:column;gap:.35rem;min-height:calc(100% - 3rem)}
+.sitedit .es-pane[data-tab="seite"][hidden]{display:none}
+
+/* Arbeitsflaeche mit feinem Punktraster - die Seite liegt darauf wie ein Blatt */
+.sitedit .edit-main{background-color:var(--ezui-grund);
+  background-image:radial-gradient(var(--ezui-linie-2) 1px,transparent 1.2px);background-size:20px 20px}
+.sitedit .edit-frame{background:transparent}
+.sitedit .edit-frame .scaler{border-radius:14px;box-shadow:0 30px 60px -30px rgba(0,0,0,.35),0 0 0 .5px var(--ezui-linie-2)}
+
+/* Speichern: zeigt seinen Zustand */
+.sitedit #etSave{min-width:104px;justify-content:center}
+.sitedit #etSave.ruht{color:var(--ezui-leise);background:transparent;border-color:transparent;box-shadow:none}
+.sitedit #etSave.ruht::before{content:"✓";margin-right:.35rem;color:var(--ezui-gruen)}
+.sitedit #etSave:not(.ruht){box-shadow:0 4px 14px -4px rgba(0,113,227,.55)}
+.sitedit .et-platz{flex:1}
+
+/* Mittlere Breite: Eigenschaften als schwebendes Panel, sobald etwas gewaehlt ist */
+@media (max-width:1180px){
+  .sitedit .edit-wrap{grid-template-columns:268px minmax(0,1fr)}
+  .sitedit .edit-insp{position:fixed;right:12px;top:64px;bottom:12px;width:300px;z-index:45;border:.5px solid var(--ezui-linie);
+    border-radius:16px;box-shadow:var(--ezui-schatten);background:var(--ezui-weiss);
+    transform:translateX(calc(100% + 24px));transition:transform .22s cubic-bezier(.3,.7,.3,1)}
+  .sitedit.hat-auswahl .edit-insp{transform:none}
+}
+/* Schmal: Eigenschaften als Blatt von unten */
+@media (max-width:820px){
+  .sitedit .edit-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .sitedit .edit-insp{left:0;right:0;top:auto;bottom:0;width:auto;max-height:58vh;border-radius:18px 18px 0 0;
+    transform:translateY(100%)}
+  .sitedit .es-tipp{display:none}
+  /* Handy: die Leiste wird ein schmaler Streifen, die Seite bekommt den Platz. */
+  .sitedit .edit-side{max-height:150px;padding:.5rem .6rem;border-right:0;border-bottom:.5px solid var(--ezui-linie)}
+  .sitedit .es-tabs{margin-bottom:.4rem}
+  .sitedit .es-pane[data-tab="seite"]{flex-direction:row;align-items:stretch;min-height:0;overflow-x:auto;gap:.4rem}
+  .sitedit .es-pane[data-tab="seite"] .es-head{display:none}
+  .sitedit .es-kacheln{display:flex;gap:.4rem}
+  .sitedit .es-kacheln button{min-width:74px;padding:.5rem .3rem .45rem}
+  .sitedit #etMedien{white-space:nowrap;align-self:center!important}
+  .sitedit .edit-insp .es-element{padding-bottom:calc(1.4rem + env(safe-area-inset-bottom))}
+}

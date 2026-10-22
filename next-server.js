@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Server fuer Next.js-Websites =====================
+/* ====== FS Creative Websitebuilder – Server fuer Next.js-Websites =====================
    Startet Next.js und legt den Builder davor: Editor, Speichern, Bilder,
    Videos, Anmeldung und (optional) die Admin-Auswahl. Die Seiten rendert
    weiterhin Next.js; die Bausteine <Ez> und <EzBild> (siehe next/Ez.tsx)

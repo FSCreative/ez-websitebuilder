@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Laufzeit =========================================
+/* ====== FS Creative Websitebuilder – Laufzeit =========================================
    Laeuft auf jeder Seite der Website und im Editor-Rahmen:
    - baut Kopf- und Fusszeile aus der Vorlage der Website (window.EZ_SITE)
    - legt die im Editor gespeicherten Inhalte ueber das HTML
@@ -32,8 +32,13 @@ const SITE = Object.assign({
   knopfText: 'Mehr erfahren',
   standardLink: '/',
   beispielZitat: '„Ein Satz, der hängen bleibt.“',
-  formularZiel: '/api/builder/formular'
+  formularZiel: '/api/builder/formular',
+  akzentKlasse: ''             // Hervorheben im Text: 'eigene-klasse' oder true (= ez-akzent); leer = aus
 }, window.EZ_SITE || {});
+/* Hervorheben im Text (ein Wort in der Akzentfarbe): nur, wenn die Website
+   es einschaltet - mit ihrer eigenen Klasse oder mit "ez-akzent" aus builder.css. */
+const AKZENT = SITE.akzentKlasse === true ? 'ez-akzent'
+  : (/^[a-z_][a-z0-9_-]{0,39}$/i.test(String(SITE.akzentKlasse || '').trim()) ? String(SITE.akzentKlasse).trim() : '');
 const DESIGN_VARIABLEN = Object.assign({
   titelschrift: '--ez-titelschrift', textschrift: '--ez-textschrift', titelfarbe: '--titelfarbe',
   textfarbe: '--ez-text', akzent: '--ez-akzent', knopfform: '--ez-radius', fussfarbe: '--fussfarbe',
@@ -206,6 +211,29 @@ const heroAnimation = (function () {
      "stilm.<schluessel>" gespeichert, Format "dx,dy,skala". Angewendet als
      transform - so bleibt der Textfluss der Seite unberuehrt. */
   const istHandy = () => window.innerWidth <= 820;
+
+  /* Bilder, die ihren Rahmen ganz ausfuellen (etwa Next.js <Image fill> in
+     einem <div> mit overflow:hidden), werden samt Rahmen verschoben und
+     vergroessert - sonst rutscht nur das Bild im abgeschnittenen Rahmen.
+     Einmal bestimmt und gemerkt, solange das Element noch unveraendert ist. */
+  const zielSpeicher = new WeakMap();
+  function bewegZiel(el) {
+    if (!el || !/^(IMG|VIDEO)$/.test(el.tagName)) return el;
+    if (zielSpeicher.has(el)) return zielSpeicher.get(el);
+    let ziel = el, t = el;
+    for (let i = 0; i < 3; i++) {
+      const p = t.parentElement;
+      if (!p || p === document.body || p.matches('section, header, main, footer, .ezblock')) break;
+      if (p.childElementCount > 1 && t !== el && !p.querySelector(':scope > img, :scope > video')) break;
+      const deckt = Math.abs(t.offsetWidth - p.clientWidth) <= 2 && Math.abs(t.offsetHeight - p.clientHeight) <= 2;
+      if (!deckt) break;
+      t = p;
+      const cs = getComputedStyle(p);
+      if (cs.overflow !== 'visible' || cs.overflowX !== 'visible' || cs.overflowY !== 'visible') { ziel = p; break; }
+    }
+    zielSpeicher.set(el, ziel);
+    return ziel;
+  }
 
   /* Auswählbare Schriften. Geladen wird nur, was eine Seite wirklich
      benutzt - sonst kostet jede Schrift Ladezeit beim Gast. */
@@ -427,7 +455,8 @@ const heroAnimation = (function () {
     const [dx = 0, dy = 0, skala = 1, breite = 0, hoehe = 0] =
       String(wert).split(',').map((n) => Number(n) || 0);
     stilWerte[schluessel] = { dx, dy, skala: skala || 1, breite, hoehe };
-    elementeZu(schluessel).forEach((el) => {
+    elementeZu(schluessel).forEach((bild) => {
+      const el = bewegZiel(bild);
       el.style.transform = `translate(${dx}px, ${dy}px) scale(${skala || 1})`;
       el.style.transformOrigin = 'center center';
       if (breite) el.style.width = breite + 'px';
@@ -1020,6 +1049,22 @@ const heroAnimation = (function () {
     return f ? (f.getAttribute('data-ez') || f.getAttribute('data-ez-img') || f.getAttribute('data-ez-bg')) : 'ende';
   };
 
+  /* Der Abschnitt, in dem die Bildschirmmitte liegt, sonst der mit der
+     groessten sichtbaren Flaeche. Kopf- und Fusszeile zaehlen nicht. */
+  function sichtbarerAbschnitt() {
+    if (!ABSCHNITT) return null;
+    const mitte = innerHeight / 2;
+    let beste = null, flaeche = 0;
+    for (const el of document.querySelectorAll(ABSCHNITT)) {
+      if (el.id === 'siteNav' || el.id === 'siteFoot' || el.closest('#siteNav, #siteFoot, .ez-plus')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top <= mitte && r.bottom >= mitte) return el;
+      const sicht = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
+      if (sicht > flaeche) { flaeche = sicht; beste = el; }
+    }
+    return beste;
+  }
+
   function blockEinfuegen(def) {
     const vorlage = BLOCK_VORLAGEN[def.art];
     if (!vorlage) return null;
@@ -1196,7 +1241,8 @@ const heroAnimation = (function () {
 
   function stilAnwenden(k) {
     const st = stilVon(k);
-    elementeZu(k).forEach((el) => {
+    elementeZu(k).forEach((bild) => {
+      const el = bewegZiel(bild);
       el.style.transform = (st.dx || st.dy || st.skala !== 1)
         ? `translate(${st.dx}px, ${st.dy}px) scale(${st.skala})` : '';
       el.style.transformOrigin = 'center center';
@@ -1327,6 +1373,7 @@ const heroAnimation = (function () {
       anker: ankerInfo(el),
       link: (el.getAttribute('data-ez-link') || el.matches('a[data-ez]')) ? (el.getAttribute('href') || '') : null,
       linkFeld: el.getAttribute('data-ez-link') || (el.matches('a[data-ez]') ? 'link.' + k : null),
+      akzent: !!AKZENT && el.hasAttribute('data-ez'),
       schrift: schriftWerte[k] || '',
       groesse: groesseWerte[k] || 0,
       /* Aktuelle Größe, auch wenn noch keine eigene gesetzt ist - fürs Zahlenfeld. */
@@ -1450,7 +1497,7 @@ const heroAnimation = (function () {
       if (art === 'move' && el.classList.contains('ezblock') && el.dataset.block) return abschnittZiehen(e, el);
       if (art === 'move' && el.hasAttribute('data-ez-menue')) return;
       const k = schluesselVon(el);
-      const kasten = el.getBoundingClientRect();
+      const kasten = bewegZiel(el).getBoundingClientRect();
       const start = { x: e.clientX, y: e.clientY, ...stilVon(k),
         breite: stilVon(k).breite || Math.round(kasten.width),
         hoehe: stilVon(k).hoehe || Math.round(kasten.height) };
@@ -1463,7 +1510,7 @@ const heroAnimation = (function () {
              schieben will, haelt die Umschalttaste gedrueckt. */
           let nx = Math.round(start.dx + dx), ny = Math.round(start.dy + dy);
           if (!ev.shiftKey) {
-            const gerastet = einrasten(el, k, nx, ny);
+            const gerastet = einrasten(bewegZiel(el), k, nx, ny);
             nx = gerastet.dx; ny = gerastet.dy;
             hilfslinienZeigen(gerastet.linien);
           } else {
@@ -1612,6 +1659,7 @@ const heroAnimation = (function () {
       punkte.push(['Fett', () => fuehreAus('bold'), 'B']);
       punkte.push(['Kursiv', () => fuehreAus('italic'), 'I']);
       punkte.push(['Unterstrichen', () => fuehreAus('underline'), 'U']);
+      if (AKZENT) punkte.push(['Hervorheben (Akzentfarbe)', () => akzentUmschalten()]);
       punkte.push(['Link im Text setzen', () => melden({ typ: 'ez-link-waehlen', feld: '' })]);
       punkte.push(['Formatierung entfernen', () => fuehreAus('removeFormat')]);
       punkte.push(['#Ausrichtung']);
@@ -1942,12 +1990,59 @@ const heroAnimation = (function () {
     melden({ typ: 'ez-geaendert' });
   }
 
+  /* Hervorheben: das markierte Wort kommt in ein <span> mit der Akzent-Klasse
+     der Website (EZ_SITE.akzentKlasse). Steht die Markierung oder der Cursor
+     schon in einer Hervorhebung, wird sie wieder aufgehoben. */
+  function akzentUmschalten() {
+    if (!AKZENT) return;
+    const s = document.getSelection();
+    const jetzt = s && s.rangeCount && hostVon(s.anchorNode) ? s.getRangeAt(0).cloneRange() : null;
+    const r = jetzt || (letzteAuswahl ? letzteAuswahl.cloneRange() : null);
+    const host = r && hostVon(r.startContainer);
+    const hinweis = (text) => melden({ typ: 'ez-hinweis', text });
+    if (!r || !host || !host.isContentEditable) return hinweis('Bitte zuerst im Text das Wort markieren, das hervorgehoben werden soll.');
+    if (!host.contains(r.endContainer)) return hinweis('Bitte nur innerhalb eines Textes markieren.');
+    const auswaehlen = (bereich) => {
+      window.focus(); host.focus({ preventScroll: true });
+      s.removeAllRanges(); s.addRange(bereich); letzteAuswahl = bereich.cloneRange();
+    };
+    const istAkzent = (el) => el.tagName === 'SPAN' && el.classList.contains(AKZENT) && el !== host;
+    const vorhanden = [...host.querySelectorAll('span')].filter((el) => istAkzent(el) && r.intersectsNode(el));
+    if (vorhanden.length) {
+      /* Aufheben: der Text bleibt, nur die Hervorhebung faellt weg. */
+      const kinder = vorhanden.flatMap((el) => [...el.childNodes]);
+      vorhanden.forEach((el) => el.replaceWith(...el.childNodes));
+      if (kinder.length) {
+        const bereich = document.createRange();
+        bereich.setStartBefore(kinder[0]); bereich.setEndAfter(kinder[kinder.length - 1]);
+        auswaehlen(bereich);
+      }
+    } else {
+      if (r.collapsed) return hinweis('Bitte zuerst im Text das Wort markieren, das hervorgehoben werden soll.');
+      const span = document.createElement('span');
+      span.className = AKZENT;
+      span.appendChild(r.extractContents());
+      r.insertNode(span);
+      /* Leere Reste direkt daneben (etwa ein geteiltes <b></b>) nicht stehen lassen. */
+      for (const n of [span.previousSibling, span.nextSibling]) {
+        if (n && n.nodeType === 1 && !n.textContent && !n.querySelector('img, video, br')) n.remove();
+      }
+      host.normalize();
+      const bereich = document.createRange();
+      bereich.selectNodeContents(span);
+      auswaehlen(bereich);
+    }
+    melden({ typ: 'ez-geaendert' });
+  }
+
   /* ---- Bloecke hinzufuegen, verschieben, entfernen ---- */
   function blockHinzufuegen(art) {
     if (!BLOCK_VORLAGEN[art]) return;
     const id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    /* Hinter dem gewaehlten Element, sonst ans Ende. */
-    const nach = aktiv ? (aktiv.closest('.ezblock[data-block]')?.dataset.block || schluesselVon(aktiv)) : 'ende';
+    /* Hinter dem gewaehlten Element; ohne Auswahl hinter dem Abschnitt, der
+       gerade im Bild steht - erst wenn es keinen gibt, ans Ende. */
+    const nach = aktiv ? (aktiv.closest('.ezblock[data-block]')?.dataset.block || schluesselVon(aktiv))
+      : bezugVon(sichtbarerAbschnitt());
     const def = { id, art, nach };
     bloecke.push(def);
     const el = blockEinfuegen(def);
@@ -2260,6 +2355,7 @@ const heroAnimation = (function () {
       if (b) blockVerschieben(b.dataset.block, e.data.richtung);
     }
     if (e.data.typ === 'ez-befehl') fuehreAus(e.data.befehl, e.data.wert);
+    if (e.data.typ === 'ez-akzent') akzentUmschalten();
     if (e.data.typ === 'ez-ausricht') {
       const el = zielElement();
       if (!el) return melden({ typ: 'ez-hinweis', text: 'Bitte zuerst ein Element anklicken.' });
@@ -2518,6 +2614,8 @@ const heroAnimation = (function () {
       delete stilWerte[k]; delete schriftWerte[k]; delete groesseWerte[k]; delete ausrichtWerte[k];
       delete farbeWerte[k]; delete ausschnittWerte[k]; delete einpassenWerte[k]; delete animWerte[k]; verstecktWerte.delete(k);
       elementeZu(k).forEach((x) => {
+        const z = bewegZiel(x);
+        if (z !== x) { z.style.transform = ''; z.style.width = ''; z.style.height = ''; }
         x.style.transform = ''; x.style.width = ''; x.style.height = ''; x.style.fontFamily = ''; x.style.fontSize = '';
         x.style.textAlign = ''; x.style.color = ''; x.style.objectFit = ''; x.style.backgroundSize = ''; x.style.backgroundRepeat = ''; x.style.objectPosition = ''; x.style.backgroundPosition = '';
         x.classList.remove('ez-versteckt');

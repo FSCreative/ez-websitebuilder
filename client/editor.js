@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Editor ============================================
+/* ====== FS Creative Websitebuilder – Editor ============================================
    Laeuft unter /website (builder/client/editor.html). Websites erweitern ihn
    mit Plugins (site.config.json -> editor.plugins) ueber window.EZ_EDITOR.
    ----------------------------------------------------------------------------
@@ -21,6 +21,7 @@ const zustand = {
   design: {},           // Website-Design (global)
   menue: [],            // Menue-Eintraege (global)
   anker: [],            // Sprungmarken aller Seiten (vom Server)
+  dateien: [],          // hochgeladene PDF-Dateien (Linkziele)
   ankerSeite: {},       // Sprungmarken je Seite, live aus dem Rahmen
   designDirty: false,   // Design/Menue geaendert und noch nicht gespeichert
   seiteDirty: false,    // Inhalte dieser Seite geaendert und noch nicht gespeichert
@@ -72,6 +73,7 @@ function setzeGeaendert(an) {
      Ohne Änderung sagt er einfach, dass es nichts zu speichern gibt. */
   $('#etSave').classList.toggle('btn-primary', an);
   $('#etSave').classList.toggle('ruht', !an);
+  $('#etSave').textContent = an ? 'Speichern' : 'Gespeichert';
   stand(an ? 'nicht gespeichert' : 'gespeichert', an);
 }
 
@@ -123,14 +125,46 @@ async function ladeSeiten() {
   sel.addEventListener('change', () => {
     if (!sel.value) return;
     const vorher = zustand.aktuell?.slug || '';
-    if (!oeffne(sel.value)) sel.value = vorher;
+    oeffne(sel.value).then((ok) => { if (!ok) sel.value = vorher; });
   });
 }
 
 async function ladeAnker() {
   try { zustand.anker = (await api('/api/anker')).anker || []; } catch { /* dann eben ohne */ }
 }
-/* Auswahl fuer Verlinkungen: alle Seiten und alle Sprungmarken. */
+/* Hochgeladene PDF-Dateien - ebenfalls als Linkziel waehlbar. */
+async function ladeDateien() {
+  try { zustand.dateien = (await api('/api/dateien')).dateien || []; } catch { zustand.dateien = []; }
+}
+/* Ein PDF waehlen und hochladen; liefert die Adresse oder null. */
+function pdfHochladen() {
+  return new Promise((fertig) => {
+    const eingabe = document.createElement('input');
+    eingabe.type = 'file'; eingabe.accept = 'application/pdf,.pdf'; eingabe.hidden = true;
+    document.body.appendChild(eingabe);
+    eingabe.addEventListener('cancel', () => { eingabe.remove(); fertig(null); });
+    eingabe.addEventListener('change', async () => {
+      const datei = eingabe.files?.[0];
+      eingabe.remove();
+      if (!datei) return fertig(null);
+      if (datei.type && datei.type !== 'application/pdf') { toast('Bitte eine PDF-Datei wählen.'); return fertig(null); }
+      if (datei.size > 20 * 1024 * 1024) { toast('Die Datei ist zu groß (höchstens 20 MB).'); return fertig(null); }
+      toast('PDF wird hochgeladen …');
+      try {
+        const r = await fetch('/api/dateien', { method: 'POST', credentials: 'same-origin', body: datei,
+          headers: { 'Content-Type': 'application/pdf', 'X-Datei-Name': encodeURIComponent(datei.name || '') } });
+        if (r.status === 401) { location.href = document.body.dataset.login || '/'; return fertig(null); }
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'Das hat nicht geklappt.');
+        await ladeDateien();
+        toast('PDF hochgeladen: ' + (datei.name || d.id));
+        fertig(d.url);
+      } catch (e) { toast(e.message); fertig(null); }
+    });
+    eingabe.click();
+  });
+}
+/* Auswahl fuer Verlinkungen: alle Seiten, alle Sprungmarken und hochgeladene PDFs. */
 function zielOptionen(aktuell) {
   const seiten = zustand.seiten.map((p) => [p.pfad, p.titel]);
   const marken = new Map();
@@ -139,10 +173,12 @@ function zielOptionen(aktuell) {
     const seite = zustand.seiten.find((p) => p.pfad === pfad);
     for (const a of liste) marken.set(pfad + '#' + a.name, `${seite ? seite.titel : pfad} → ${a.titel}`);
   }
-  const bekannt = new Set([...seiten.map(([pf]) => pf), ...marken.keys()]);
+  const dateien = (zustand.dateien || []).map((d) => [d.url, String(d.name || d.id).replace(/[<>&"]/g, '')]);
+  const bekannt = new Set([...seiten.map(([pf]) => pf), ...marken.keys(), ...dateien.map(([u]) => u)]);
   const opt = (w, t) => `<option value="${w.replace(/"/g, '&quot;')}" ${aktuell === w ? 'selected' : ''}>${t}</option>`;
   const html = `<optgroup label="Seiten">${seiten.map(([w, t]) => opt(w, t)).join('')}</optgroup>`
     + (marken.size ? `<optgroup label="Sprungmarken (Anker)">${[...marken].sort((a, b) => a[1].localeCompare(b[1])).map(([w, t]) => opt(w, t)).join('')}</optgroup>` : '')
+    + (dateien.length ? `<optgroup label="Dateien (PDF)">${dateien.map(([w, t]) => opt(w, t)).join('')}</optgroup>` : '')
     + `<option value="__eigen" ${aktuell !== undefined && !bekannt.has(aktuell) ? 'selected' : ''}>Eigener Link (Adresse eintippen) …</option>`;
   return { html, bekannt };
 }
@@ -159,11 +195,11 @@ function ladeRahmen() {
   passeGroesseAn();
 }
 
-function oeffne(slug) {
+async function oeffne(slug) {
   const seite = zustand.seiten.find((p) => p.slug === slug);
   if (!seite) return false;
   if (zustand.seiteDirty
-    && !confirm('Die Änderungen auf dieser Seite sind noch nicht gespeichert. Trotzdem wechseln?')) return false;
+    && await ungespeichertFrage('Die Änderungen auf dieser Seite sind noch nicht gespeichert.') === 'bleiben') return false;
   zustand.aktuell = seite;
   zustand.vorschau = false;
   pluginKnoepfeZeigen();
@@ -228,30 +264,63 @@ function mobilFrage() {
 }
 
 async function speichern() {
-  if (!zustand.aktuell) return;
-  if (zustand.vorschau) return toast('In der Vorschau lässt sich nichts speichern.');
-  if (!zustand.geaendert) return toast('Es gibt nichts zu speichern – die Seite ist aktuell.');
+  if (!zustand.aktuell) return false;
+  if (zustand.vorschau) { toast('In der Vorschau lässt sich nichts speichern.'); return false; }
+  if (!zustand.geaendert) { toast('Es gibt nichts zu speichern – die Seite ist aktuell.'); return true; }
   /* Am Telefon gilt die Aenderung ohnehin nur dort - keine Frage noetig. */
   const mobilMit = zustand.geraet === 'mobil' ? null : await mobilFrage();
   stand('speichert …');
-  wartetAufWerte = async (werte) => {
-    try {
-      const d = await api('/api/pages/' + zustand.aktuell.slug, { method: 'PUT', body: { fields: werte } });
-      /* Der Rahmen rechnet ab jetzt vom gespeicherten Stand aus weiter. */
-      rahmen()?.postMessage({ typ: 'ez-gespeichert', werte: d.fields || werte }, HERKUNFT);
-      setzeGeaendert(false);
-      ladeAnker();
-      toast(zustand.geraet === 'mobil'
-        ? 'Gespeichert – gilt nur für die Handy-Ansicht.'
-        : mobilMit
-          ? 'Gespeichert – gilt für beide Ansichten.'
-          : 'Gespeichert – die Handy-Ansicht bleibt unverändert.');
-    } catch (e) {
-      stand('nicht gespeichert', true);
-      toast(e.message);
-    }
-  };
-  rahmen()?.postMessage({ typ: 'ez-sammeln', mobilMit }, HERKUNFT);
+  return new Promise((fertig) => {
+    wartetAufWerte = async (werte) => {
+      try {
+        const d = await api('/api/pages/' + zustand.aktuell.slug, { method: 'PUT', body: { fields: werte } });
+        /* Der Rahmen rechnet ab jetzt vom gespeicherten Stand aus weiter. */
+        rahmen()?.postMessage({ typ: 'ez-gespeichert', werte: d.fields || werte }, HERKUNFT);
+        setzeGeaendert(false);
+        ladeAnker();
+        const uhr = new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+        stand('gespeichert um ' + uhr);
+        toast(zustand.geraet === 'mobil'
+          ? 'Gespeichert – gilt nur für die Handy-Ansicht.'
+          : mobilMit
+            ? 'Gespeichert – gilt für beide Ansichten.'
+            : 'Gespeichert – die Handy-Ansicht bleibt unverändert.');
+        fertig(true);
+      } catch (e) {
+        stand('nicht gespeichert', true);
+        toast(e.message);
+        fertig(false);
+      }
+    };
+    rahmen()?.postMessage({ typ: 'ez-sammeln', mobilMit }, HERKUNFT);
+    /* Antwortet der Rahmen nicht, bleibt der Editor nicht haengen. */
+    setTimeout(() => { if (wartetAufWerte) { wartetAufWerte = null; stand('nicht gespeichert', true); toast('Speichern hat nicht geklappt – bitte noch einmal versuchen.'); fertig(false); } }, 15000);
+  });
+}
+
+/* Dreifache Frage statt blossem "Trotzdem wechseln?": speichern und weiter,
+   verwerfen oder bleiben. Ergebnis: 'weiter' | 'bleiben'. */
+function ungespeichertFrage(text) {
+  return new Promise((fertig) => {
+    const box = document.createElement('div');
+    box.className = 'ez-hinweisfenster';
+    box.innerHTML = `<div class="ez-hf-inner" role="dialog" aria-modal="true">
+        <h3>Ungespeicherte Änderungen</h3><p>${text}</p>
+        <div class="ez-hf-knoepfe">
+          <button class="btn btn-primary btn-sm" data-w="speichern" type="button">Speichern und weiter</button>
+          <button class="btn btn-sm" data-w="verwerfen" type="button">Verwerfen</button>
+          <button class="btn btn-sm" data-w="bleiben" type="button">Abbrechen</button>
+        </div></div>`;
+    document.body.appendChild(box);
+    box.querySelectorAll('button[data-w]').forEach((b) => b.addEventListener('click', async () => {
+      const w = b.dataset.w;
+      box.remove();
+      if (w === 'bleiben') return fertig('bleiben');
+      if (w === 'speichern') return fertig((await speichern()) ? 'weiter' : 'bleiben');
+      fertig('weiter');
+    }));
+    box.querySelector('button[data-w=speichern]').focus();
+  });
 }
 
 /* ---------------- Vorschau ---------------- */
@@ -291,6 +360,12 @@ function linkSheet(auf) {
 $('#linkZiel').addEventListener('change', (e) => {
   if (e.target.value !== '__eigen') $('#linkUrl').value = e.target.value;
   $('#linkUrl').focus();
+});
+$('#linkPdf')?.addEventListener('click', async () => {
+  const url = await pdfHochladen();
+  if (!url) return;
+  $('#linkUrl').value = url;
+  $('#linkZiel').innerHTML = zielOptionen(url).html;
 });
 $('#linkOk').addEventListener('click', () => {
   const url = $('#linkUrl').value.trim();
@@ -372,10 +447,6 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Escape') sende('esc');
 });
 
-/* Nicht gespeicherte Aenderungen nicht still verlieren. */
-window.addEventListener('beforeunload', (e) => {
-  if (zustand.geaendert && !zustand.vorschau) { e.preventDefault(); e.returnValue = ''; }
-});
 
 /* Kurze Hilfe beim ersten Mal (und auf Knopfdruck). */
 function hilfeZeigen() {
@@ -387,9 +458,9 @@ function hilfeZeigen() {
       icon: svg('<path d="M5 3l14 9-6 1-3 6z"/>') },
     { nr: 3, titel: 'Bilder & Videos', text: 'Bild anklicken und am Rahmen auf „Tauschen“ – eigene Fotos oder Videos hochladen.',
       icon: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/>') },
-    { nr: 4, titel: 'Abschnitte hinzufügen', text: 'Das Plus zwischen zwei Abschnitten oder die Kacheln links: Text, Bild, Galerie, Formular …',
+    { nr: 4, titel: 'Abschnitte hinzufügen', text: 'Das Plus zwischen zwei Abschnitten oder die Kacheln links: Text, Bild, Galerie, Formular … – neue Inhalte landen beim gewählten oder sichtbaren Abschnitt.',
       icon: svg('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>') },
-    { nr: 5, titel: 'Gestalten', text: 'Links in der Leiste: Schrift, Größe, Farbe, Ausrichtung – und die Einstellungen jedes Abschnitts.',
+    { nr: 5, titel: 'Gestalten', text: 'Rechts im Panel „Eigenschaften“: Schrift, Größe, Farbe, Ausrichtung – und die Einstellungen jedes Abschnitts.',
       icon: svg('<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 3 0 4-1 1-3 1-4a9 9 0 0 0-7-8Z"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/>') },
     { nr: 6, titel: 'Prüfen und speichern', text: 'Mit dem Telefonsymbol die Handy-Ansicht prüfen, dann oben rechts speichern.',
       icon: svg('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.8h2"/><path d="m16 8 2 2 4-4"/>') }
@@ -416,7 +487,7 @@ function hilfeZeigen() {
       <span><b>Kopfzeile, Menü, Fußzeile</b> – Kopf- oder Fußzeile anklicken, dann „Bearbeiten …“: ein Fenster für alles</span>
       <span><b>Sprungmarken</b> – Abschnitt anklicken, unten „Sprungmarke“ setzen; danach im Menü oder an Buttons als Ziel wählbar</span>
       <span><b>Rückgängig</b> – ↶ oben oder ⌘/Strg+Z nimmt den letzten Schritt zurück, ↷ holt ihn wieder – auch nach dem Speichern</span>
-      <span><b>Tasten</b> – ⌘/Strg+S speichern · ⌘/Strg+D Abschnitt duplizieren · Alt+↑/↓ verschieben · Entf löschen · Esc abwählen</span>
+      <span><b>Tasten</b> – ⌘/Strg+K Befehle suchen · ⌘/Strg+S speichern · ⌘/Strg+D Abschnitt duplizieren · Alt+↑/↓ verschieben · Entf löschen · Esc abwählen</span>
       <span><b>? Hilfe</b> – diese Übersicht jederzeit wieder öffnen</span>
     </div>
     <div class="ez-hf-knoepfe"><button class="btn btn-primary" type="button" data-los>Los geht's</button></div>
@@ -429,6 +500,10 @@ function hilfeZeigen() {
   box.querySelector('[data-los]').focus();
 }
 $('#etHilfe')?.addEventListener('click', hilfeZeigen);
+if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) { const kb = $('#etBefehle'); if (kb) kb.textContent = 'Strg K'; }
+$('#etBefehle')?.addEventListener('click', () => befehlspalette());
+$('#etTipps')?.addEventListener('click', hilfeZeigen);
+$('#etInspZu')?.addEventListener('click', () => rahmen()?.postMessage({ typ: 'ez-taste', taste: 'esc' }, HERKUNFT));
 try { if (!localStorage.getItem('ez-hilfe')) setTimeout(hilfeZeigen, 600); } catch { /* egal */ }
 
 /* ---------------- Seitenleiste: zwei Bereiche ---------------- */
@@ -705,7 +780,7 @@ function ndRendern() {
   })));
   host.querySelectorAll('[data-nd-zeigen]').forEach((b) => b.addEventListener('click', () => rahmen()?.postMessage({ typ: 'ez-zeigen', ziel: b.dataset.ndZeigen }, HERKUNFT)));
   host.querySelector('[data-nd="handyansicht"]')?.addEventListener('click', () => {
-    if (geraetWechseln('mobil')) ndRendern();
+    geraetWechseln('mobil').then((ok) => { if (ok) ndRendern(); });
   });
 
   /* Menue-Eintraege */
@@ -773,10 +848,21 @@ const GALERIE_TYPEN = [
 ];
 
 /* Zeigt zum gewaehlten Element die passenden Werkzeuge. */
+const LEER_INSP = `<div class="ei-leer">
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="9" width="36" height="28" rx="4" opacity=".35"/><path d="M14 18h14M14 24h20" opacity=".35"/>
+      <path d="m27 27 4 13 3-5 5 5 3-3-5-5 5-3z" fill="var(--ezui-weiss)"/></svg>
+    <b>Etwas anklicken</b>
+    <span>Wähle auf der Seite einen Text, ein Bild oder einen Abschnitt – hier stellst du dann Schrift, Größe, Farbe und mehr ein.</span>
+  </div>`;
 function elementLeiste(info) {
   const host = $('#etElement');
+  if (document.body.classList.contains('hat-auswahl') !== !!info) {
+    document.body.classList.toggle('hat-auswahl', !!info);
+    requestAnimationFrame(passeGroesseAn);
+  }
   if (!info) {
-    host.innerHTML = '<p class="es-leer">Nichts gewählt – auf der Seite ein Element anklicken.</p>';
+    host.innerHTML = LEER_INSP;
     return;
   }
   if (info.art === 'menue' || info.art === 'fuss') {
@@ -838,6 +924,7 @@ function elementLeiste(info) {
       <div class="es-zeile">
         <button type="button" class="btn btn-sm" data-tu="fett" title="Fett (Cmd/Strg + B)"><b>B</b></button>
         <button type="button" class="btn btn-sm" data-tu="kursiv" title="Kursiv (Cmd/Strg + I)"><i>I</i></button>
+        ${info.akzent ? '<button type="button" class="btn btn-sm" data-tu="akzent" title="Markiertes Wort in der Akzentfarbe hervorheben – noch einmal klicken nimmt es zurück">Hervorheben</button>' : ''}
         <button type="button" class="btn btn-sm" data-tu="link">Link im Text</button>
         <button type="button" class="btn btn-sm" data-tu="format" title="Formatierung entfernen">Format ⌫</button>
         <button type="button" class="btn btn-sm" data-tu="undo" title="Rückgängig (Cmd/Strg + Z)">⟲</button>
@@ -853,7 +940,8 @@ function elementLeiste(info) {
     h += `<div class="es-feld es-ziel"><span>Verlinkung</span>
       <select class="input" data-tu="linkziel" title="Seite oder Sprungmarke wählen">${zielOptionen(info.link || undefined).html}</select>
       <div class="es-zeile"><input class="input" data-tu="linkfeld" value="${String(info.link).replace(/"/g, '&quot;')}" placeholder="/seite, /seite#anker oder https://…">
-      <button type="button" class="btn btn-sm" data-tu="linkok">OK</button></div></div>`;
+      <button type="button" class="btn btn-sm" data-tu="linkok">OK</button></div>
+      <div class="es-zeile"><button type="button" class="btn btn-sm" data-tu="linkpdf" title="Eine PDF-Datei hochladen und hierher verlinken">PDF hochladen …</button></div></div>`;
   }
   if (info.anker) {
     const a = info.anker;
@@ -959,6 +1047,7 @@ function elementLeiste(info) {
       if (tu === 'ausricht') sende({ typ: 'ez-ausricht', wie: el.dataset.wie });
       if (tu === 'fett') befehl('bold');
       if (tu === 'kursiv') befehl('italic');
+      if (tu === 'akzent') sende({ typ: 'ez-akzent' });
       if (tu === 'format') befehl('removeFormat');
       if (tu === 'farbe') { sende({ typ: 'ez-farbe', farbe: el.dataset.farbe }); host.querySelectorAll('.es-farbe').forEach((x) => x.classList.toggle('ist-aktiv', x === el)); }
       if (tu === 'farbefrei') { sende({ typ: 'ez-farbe', farbe: el.value }); host.querySelectorAll('.es-farbe').forEach((x) => x.classList.remove('ist-aktiv')); }
@@ -980,6 +1069,16 @@ function elementLeiste(info) {
       if (tu === 'linkok') {
         const url = host.querySelector('[data-tu="linkfeld"]').value.trim() || '#';
         if (info.linkFeld) { sende({ typ: 'ez-setzen', feld: info.linkFeld, wert: url }); setzeGeaendert(true); toast('Verlinkung gesetzt.'); }
+      }
+      if (tu === 'linkpdf') {
+        pdfHochladen().then((url) => {
+          if (!url || !info.linkFeld) return;
+          sende({ typ: 'ez-setzen', feld: info.linkFeld, wert: url });
+          setzeGeaendert(true);
+          info.link = url;
+          elementLeiste(info);
+          toast('PDF verlinkt – bitte speichern.');
+        });
       }
       if (tu === 'linkziel') {
         if (el.value === '__eigen') { host.querySelector('[data-tu="linkfeld"]').focus(); return; }
@@ -1122,6 +1221,10 @@ async function ladeBilder() {
     .join('');
   $('#imgGrid').querySelectorAll('button').forEach((b) =>
     b.addEventListener('click', () => waehleBild(b.dataset.url)));
+  /* Die festen Beispielfotos (/img/site/…) hat nicht jede Website - fehlende
+     Kacheln verschwinden, statt leer stehen zu bleiben. */
+  $('#imgGrid').querySelectorAll('img').forEach((im) =>
+    im.addEventListener('error', () => im.closest('button')?.remove(), { once: true }));
 
   const videos = v.videos || [];
   const vg = $('#vidGrid');
@@ -1199,11 +1302,12 @@ function waehleBild(url) {
   bildSheet(false);
 }
 
-/* Bilder bleiben so scharf wie moeglich: Passt die Datei ins Limit, geht sie
-   unveraendert raus - ohne neues Komprimieren, also ohne Qualitaetsverlust.
-   Erst wenn sie zu gross ist, wird auf 3200 px heruntergerechnet. */
-const MAX_KANTE = 3200;
-const MAX_BYTES = 3.6 * 1024 * 1024;
+/* Schnelle Seiten, scharfe Bilder: Eine Datei, die schon klein genug ist,
+   geht unveraendert raus (Logos und Grafiken als PNG bis 1,5 MB, Fotos bis
+   500 KB). Alles andere wird auf hoechstens 2560 px (reicht fuer Retina-
+   Vollbreite) verkleinert und als WebP gespeichert - meist 70-90 % kleiner. */
+const MAX_KANTE = 2560;
+const MAX_BYTES = 1.2 * 1024 * 1024;
 
 function aufbereiten(datei) {
   return new Promise((fertig, fehler) => {
@@ -1214,23 +1318,27 @@ function aufbereiten(datei) {
       const bild = new Image();
       bild.onerror = () => fehler(new Error('Das ist kein gültiges Bild.'));
       bild.onload = () => {
-        const passt = datei.size <= MAX_BYTES
-          && Math.max(bild.width, bild.height) <= MAX_KANTE;
-        if (passt) return fertig({ dataUrl: quelle, info: `${bild.width}×${bild.height} px, unverändert` });
-
-        let faktor = Math.min(1, MAX_KANTE / Math.max(bild.width, bild.height));
+        const kante = Math.max(bild.width, bild.height);
+        const grenze = datei.type === 'image/png' ? 1.5 * 1024 * 1024 : 500 * 1024;
+        if (datei.size <= grenze && kante <= MAX_KANTE) {
+          return fertig({ dataUrl: quelle, info: `${bild.width}×${bild.height} px, unverändert` });
+        }
+        let faktor = Math.min(1, MAX_KANTE / kante);
+        let qualitaet = 0.82;
         let aus = '';
-        /* Solange verkleinern, bis die Datei ins Limit passt. */
+        /* Erst die Qualitaet, dann die Groesse senken, bis die Datei ins Limit passt. */
         for (let i = 0; i < 6; i++) {
           const c = document.createElement('canvas');
           c.width = Math.round(bild.width * faktor);
           c.height = Math.round(bild.height * faktor);
           c.getContext('2d').drawImage(bild, 0, 0, c.width, c.height);
-          aus = c.toDataURL('image/jpeg', 0.92);
+          aus = c.toDataURL('image/webp', qualitaet);
+          if (!aus.startsWith('data:image/webp')) aus = c.toDataURL('image/jpeg', Math.max(qualitaet, 0.85));   // aeltere Browser
           if (aus.length * 0.75 <= MAX_BYTES) {
-            return fertig({ dataUrl: aus, info: `${c.width}×${c.height} px` });
+            const kb = Math.round(aus.length * 0.75 / 1024);
+            return fertig({ dataUrl: aus, info: `${c.width}×${c.height} px, ${kb} KB (vorher ${Math.round(datei.size / 1024)} KB)` });
           }
-          faktor *= 0.8;
+          if (i % 2 === 0) qualitaet = Math.max(0.6, qualitaet - 0.1); else faktor *= 0.85;
         }
         fertig({ dataUrl: aus, info: 'verkleinert' });
       };
@@ -1478,10 +1586,10 @@ $('#etReset')?.addEventListener('click', () => {
   rahmen()?.postMessage({ typ: 'ez-zuruecksetzen', was: 'alles' }, HERKUNFT);
 });
 
-function geraetWechseln(g) {
+async function geraetWechseln(g) {
   if (g === zustand.geraet) return true;
   if (zustand.seiteDirty
-    && !confirm('Beim Wechsel der Ansicht wird die Seite neu geladen. Nicht gespeicherte Änderungen an den Inhalten dieser Seite gehen verloren – Design und Menü bleiben erhalten. Fortfahren?')) return false;
+    && await ungespeichertFrage('Beim Wechsel der Ansicht wird die Seite neu geladen.') === 'bleiben') return false;
   /* Design-Aenderungen ueberleben das Neuladen: der Rahmen bekommt sie zurueck. */
   const design = zustand.designDirty;
   setzeGeaendert(false);
@@ -1501,15 +1609,93 @@ document.addEventListener('keydown', (e) => {
     else if (ND.offen) navDialog(false);
   }
 });
+/* Nicht gespeicherte Aenderungen nie still verlieren: Schliessen des Tabs oder
+   Browsers, Neuladen, Zurueck und Linkklicks loesen die Browser-Warnung aus,
+   solange Inhalte, Design oder Menue nicht gespeichert sind. */
 window.addEventListener('beforeunload', (e) => {
-  if (zustand.geaendert) { e.preventDefault(); e.returnValue = ''; }
+  if (zustand.geaendert || zustand.seiteDirty || zustand.designDirty) {
+    e.preventDefault();
+    e.returnValue = 'Du hast ungespeicherte Änderungen.';
+    return e.returnValue;
+  }
+});
+
+
+/* ---------------- Befehlspalette (⌘/Strg + K) ----------------
+   Alles an einem Ort: Seite wechseln, speichern, Ansicht, Hilfe ... einfach tippen. */
+function themaSetzen(t) {
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { if (t) localStorage.setItem('ez-thema', t); else localStorage.removeItem('ez-thema'); } catch { /* egal */ }
+}
+try { const t = localStorage.getItem('ez-thema'); if (t) document.documentElement.dataset.theme = t; } catch { /* egal */ }
+function befehlsliste() {
+  const klick = (sel) => () => $(sel)?.click();
+  const liste = [
+    { t: 'Speichern', k: '⌘S', f: () => speichern() },
+    { t: 'Rückgängig', k: '⌘Z', f: klick('#etUndo') },
+    { t: 'Wiederholen', k: '⇧⌘Z', f: klick('#etRedo') },
+    { t: zustand.vorschau ? 'Zurück zum Bearbeiten' : 'Vorschau öffnen', f: klick('#etPreview') },
+    { t: 'Große Ansicht', f: () => geraetWechseln('desktop') },
+    { t: 'Handy-Ansicht', f: () => geraetWechseln('mobil') },
+    { t: 'Tab „Diese Seite"', f: () => seitenTab('seite') },
+    { t: 'Tab „Website-Design"', f: () => seitenTab('design') },
+    { t: 'Änderungen verwerfen', f: klick('#etReload') },
+    { t: 'Erscheinungsbild: Hell', f: () => themaSetzen('light') },
+    { t: 'Erscheinungsbild: Dunkel', f: () => themaSetzen('dark') },
+    { t: 'Erscheinungsbild: Wie das System', f: () => themaSetzen('') },
+    { t: 'Hilfe', f: hilfeZeigen }
+  ];
+  for (const p of zustand.seiten) liste.push({ t: 'Gehe zu: ' + p.titel, k: p.pfad, f: () => oeffne(p.slug) });
+  return liste;
+}
+function befehlspalette() {
+  if (document.querySelector('.ez-palette')) return;
+  const box = document.createElement('div');
+  box.className = 'ez-hinweisfenster ez-palette';
+  box.innerHTML = `<div class="ez-hf-inner ez-pal-inner" role="dialog" aria-modal="true" aria-label="Befehle">
+    <input type="text" placeholder="Befehl oder Seite suchen …" aria-label="Befehl suchen" autocomplete="off">
+    <ul role="listbox"></ul></div>`;
+  document.body.appendChild(box);
+  const eingabe = box.querySelector('input'), ul = box.querySelector('ul');
+  const alle = befehlsliste();
+  let treffer = alle, wahl = 0;
+  const zeichne = () => {
+    ul.innerHTML = treffer.map((b, i) => `<li role="option" data-i="${i}" aria-selected="${i === wahl}">
+      <span>${b.t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</span>${b.k ? `<kbd>${b.k.replace(/[&<>]/g, '')}</kbd>` : ''}</li>`).join('')
+      || '<li class="leer">Nichts gefunden</li>';
+    ul.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' });
+  };
+  const zu = () => box.remove();
+  const los = (i) => { const b = treffer[i]; if (!b) return; zu(); b.f(); };
+  eingabe.addEventListener('input', () => {
+    const q = eingabe.value.trim().toLowerCase();
+    treffer = q ? alle.filter((b) => b.t.toLowerCase().includes(q)) : alle; wahl = 0; zeichne();
+  });
+  eingabe.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); wahl = Math.min(wahl + 1, treffer.length - 1); zeichne(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); wahl = Math.max(wahl - 1, 0); zeichne(); }
+    else if (e.key === 'Enter') { e.preventDefault(); los(wahl); }
+    else if (e.key === 'Escape') { e.stopPropagation(); zu(); }
+  });
+  ul.addEventListener('click', (e) => { const li = e.target.closest('li[data-i]'); if (li) los(Number(li.dataset.i)); });
+  box.addEventListener('mousedown', (e) => { if (e.target === box) zu(); });
+  zeichne(); eingabe.focus();
+}
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); befehlspalette(); }
+});
+window.addEventListener('message', (e) => {
+  /* Auch aus der Website heraus (Rahmen) erreichbar. */
+  if (e.origin === location.origin && e.data?.typ === 'ez-palette') befehlspalette();
 });
 
 /* ---------------- Start ---------------- */
 (async () => {
+  elementLeiste(null);
   try {
     await ladeSeiten();
     ladeAnker();
+    ladeDateien();
     oeffne('index');
     passeGroesseAn();
   } catch (e) { toast(e.message); }

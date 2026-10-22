@@ -1,4 +1,4 @@
-/* ====== EZ Websitebuilder – Server-Modul ======================================
+/* ====== FS Creative Websitebuilder – Server-Modul ======================================
    Alles, was der Website-Editor auf dem Server braucht, in einem Modul:
    Seiteninhalte, Bilder, Videos, Sprungmarken, Formulare, die Editor-Seite
    und das Einbauen gespeicherter Inhalte in die Gaesteseiten.
@@ -17,12 +17,15 @@
    Praefix "global." (Kopf- und Fusszeile, Design, Menue) gelten fuer alle
    Seiten und liegen in einem eigenen Satz "_global".                    */
 import express from 'express';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HIER = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT = path.join(HIER, 'client');
+const FASSUNG_PAKET = (() => { try { return JSON.parse(fs.readFileSync(path.join(HIER, 'package.json'), 'utf8')).version || ''; } catch { return ''; } })();
 
 export function ladeKonfiguration(datei) {
   const roh = JSON.parse(fs.readFileSync(datei, 'utf8'));
@@ -49,6 +52,26 @@ const TEXTFELD = /^(bild\.|hg\.|stil|schrift|groesse|ausricht|link\.|farbe\.|ver
    Schrift, Farbe usw. dieser Elemente. */
 const GLOBAL = /^(m\.)?(global\.|(stil|stilm|schrift|schriftm|groesse|groessem|ausricht|ausrichtm|farbe|ausschnitt|einpassen|anim|versteckt)\.global\.)/;
 export const istGlobal = (k) => GLOBAL.test(k);
+
+
+/* Text komprimiert ausliefern (Brotli, sonst gzip) - ohne zusaetzliche Pakete. */
+function codierung(req) {
+  const a = String(req.get('accept-encoding') || '');
+  return /\bbr\b/.test(a) ? 'br' : /\bgzip\b/.test(a) ? 'gzip' : null;
+}
+function komprimieren(art, buf, schnell) {
+  return art === 'br'
+    ? zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: schnell ? 4 : 11 } })
+    : zlib.gzipSync(buf, { level: schnell ? 6 : 9 });
+}
+function sendeHtml(req, res, html) {
+  const art = codierung(req);
+  res.type('html');
+  res.set('Vary', 'Accept-Encoding');
+  const buf = Buffer.from(html, 'utf8');
+  if (!art || buf.length < 1024) return res.send(buf);
+  res.set('Content-Encoding', art).send(komprimieren(art, buf, true));
+}
 
 export function mountBuilder(app, opts) {
   const { config, store, requireStaff } = opts;
@@ -106,6 +129,35 @@ export function mountBuilder(app, opts) {
     felderSpeicher.set(slug, { zeit: Date.now(), werte });
     return werte;
   };
+
+  /* ---------------- Info fuer die Zentrale (VALUERO Partner) ----------------
+     Nur mit EZ_SITE_ID + EZ_SITE_KEY. Die Zentrale signiert jede Abfrage mit dem
+     Site-Key:  x-ez-sig: <bis>.<hmac(key, "info:" + siteId + ":" + bis).slice(0, 40)>
+     (hoechstens 5 Minuten gueltig). Liefert Fassung, Seiten und letzte Bearbeitung -
+     keine Inhalte. Ohne die Variablen: 404, wie bisher. */
+  const infoId = String(opts.siteId ?? process.env.EZ_SITE_ID ?? '');
+  const infoKey = String(opts.siteKey ?? process.env.EZ_SITE_KEY ?? '');
+  app.get('/api/builder/info', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    if (!infoId || !infoKey) return res.status(404).json({ error: 'Nicht gefunden' });
+    const [bis, sig] = String(req.get('x-ez-sig') || '').split('.');
+    const jetzt = Date.now();
+    const soll = crypto.createHmac('sha256', infoKey).update(`info:${infoId}:${Number(bis)}`).digest('hex').slice(0, 40);
+    const ok = !!sig && Number(bis) > jetzt && Number(bis) <= jetzt + 5 * 60000
+      && sig.length === soll.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(soll));
+    if (!ok) return res.status(401).json({ error: 'Nicht berechtigt' });
+    let gespeichert = [];
+    try { gespeichert = await store.listPages(); } catch { /* Ablage nicht erreichbar */ }
+    const zeiten = new Map(gespeichert.map((p) => [p.slug, p.updatedAt ? new Date(p.updatedAt).toISOString() : null]));
+    const alle = [...zeiten.values()].filter(Boolean).sort();
+    res.json({
+      version: FASSUNG_PAKET,
+      siteId: infoId,
+      pages: PAGES.map((p) => ({ slug: p.slug, title: p.titel || p.slug, updatedAt: zeiten.get(p.slug) || null })),
+      lastEdit: alle.length ? alle[alle.length - 1] : null,
+      store: store.art || (process.env.DATABASE_URL ? 'postgres' : 'json')
+    });
+  });
 
   /* ---------------- Seiten ---------------- */
   app.get('/api/builder/config', requireStaff, (req, res) => {
@@ -272,6 +324,51 @@ export function mountBuilder(app, opts) {
     res.json({ ok: true });
   });
 
+  /* ---------------- Dateien (PDF) ----------------
+     Zum Verlinken, etwa ein Grundriss oder eine Preisliste. Roh hochgeladen
+     wie Videos, nur fuer angemeldete Bearbeiter, liegt in derselben Ablage.
+     Angenommen wird nur, was wirklich ein PDF ist ("%PDF-" am Anfang). */
+  const DATEI_TYPEN = { 'application/pdf': 'pdf' };
+  const MAX_DATEI_BYTES = 20 * 1024 * 1024;
+  const dateiName = (n) => String(n || '').toLowerCase().replace(/\.pdf$/i, '')
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  app.post('/api/dateien', requireStaff, express.raw({ type: Object.keys(DATEI_TYPEN), limit: '21mb' }), async (req, res) => {
+    const mime = String(req.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!DATEI_TYPEN[mime]) return res.status(415).json({ error: 'Erlaubt sind PDF-Dateien.' });
+    const bytes = Buffer.isBuffer(req.body) ? req.body : null;
+    if (!bytes || !bytes.length) return res.status(400).json({ error: 'Die Datei ist leer.' });
+    if (bytes.length > MAX_DATEI_BYTES) return res.status(413).json({ error: 'Die Datei ist zu groß (höchstens 20 MB).' });
+    if (!bytes.subarray(0, 1024).includes('%PDF-')) return res.status(415).json({ error: 'Das ist keine gültige PDF-Datei.' });
+    let name = '';
+    try { name = decodeURIComponent(req.get('x-datei-name') || ''); } catch { name = ''; }
+    const kurz = dateiName(name);
+    const id = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (kurz ? '-' + kurz : '') + '.' + DATEI_TYPEN[mime];
+    await store.saveImage(id, mime, bytes, clean(name, 120));
+    res.status(201).json({ ok: true, id, url: '/datei/db/' + id, name: clean(name, 120), size: bytes.length });
+  });
+  app.get('/api/dateien', requireStaff, async (req, res) => {
+    res.json({ dateien: (await store.listImages())
+      .filter((i) => DATEI_TYPEN[String(i.mime || '')])
+      .map((i) => ({ ...i, url: '/datei/db/' + i.id })) });
+  });
+  app.get('/datei/db/:id', async (req, res) => {
+    const d = await store.getImage(req.params.id);
+    if (!d || !DATEI_TYPEN[String(d.mime || '')]) return res.status(404).end();
+    const kurz = /^d[a-z0-9]+-([a-z0-9-]+)\.pdf$/.exec(req.params.id);
+    res.set('Content-Type', d.mime);
+    res.set('Content-Disposition', `inline; filename="${kurz ? kurz[1] : 'datei'}.pdf"`);
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.end(d.bytes);
+  });
+  app.delete('/api/dateien/:id', requireStaff, async (req, res) => {
+    const d = await store.getImage(req.params.id);
+    if (!d || !DATEI_TYPEN[String(d.mime || '')]) return res.status(404).json({ error: 'Unbekannte Datei' });
+    await store.deleteImage(req.params.id);
+    res.json({ ok: true });
+  });
+
   /* ---------------- Formulare aus dem Editor ----------------
      Ein Formular-Block schickt seine Felder als Liste. Die Nachricht geht an
      config.formulare.an (oder opts.formularAn). Ohne Mailversand landet sie
@@ -314,8 +411,28 @@ export function mountBuilder(app, opts) {
      damit nach dem Aufspielen jeder Browser die neue Datei laedt. */
   const FASSUNG = opts.fassung || Date.now().toString(36);
   const mitFassung = (html) => html.replace(/(href|src)="(\/(?:css|js|builder)\/[^"?]+)"/g, `$1="$2?v=${FASSUNG}"`);
-  app.use('/builder', express.static(CLIENT, { setHeaders: (res) => res.set('Cache-Control', 'no-cache') }));
-  app.get(ed.pfad || '/website', (req, res) => {
+  /* Skripte und Stile: komprimiert und - mit Fassungs-Kennung (?v=) - ein Jahr
+     lang im Browser behalten; ohne Kennung bleibt es bei no-cache. */
+  const vorKomprimiert = new Map();
+  const MIME = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+  app.use('/builder', (req, res, next) => {
+    const ext = path.extname(req.path);
+    const art = codierung(req);
+    if (!MIME[ext] || !art || !['GET', 'HEAD'].includes(req.method)) return next();
+    const datei = path.join(CLIENT, path.normalize(req.path));
+    if (!datei.startsWith(CLIENT + path.sep)) return next();
+    fs.stat(datei, (err, st) => {
+      if (err || !st.isFile()) return next();
+      const key = art + datei + st.mtimeMs;
+      let buf = vorKomprimiert.get(key);
+      if (!buf) { buf = komprimieren(art, fs.readFileSync(datei), false); vorKomprimiert.set(key, buf); }
+      res.set({ 'Content-Type': MIME[ext], 'Content-Encoding': art, Vary: 'Accept-Encoding',
+        'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache' });
+      res.send(buf);
+    });
+  });
+  app.use('/builder', express.static(CLIENT, { setHeaders: (res, f, st) => res.set('Cache-Control', 'no-cache') }));
+  app.get(ed.pfad || '/website', ...(ed.geschuetzt ? [requireStaff] : []), (req, res) => {
     fs.readFile(path.join(CLIENT, 'editor.html'), 'utf8', (err, html) => {
       if (err) return res.status(404).send('Nicht gefunden');
       const z = ed.zurueck || {};
@@ -361,9 +478,9 @@ export function mountBuilder(app, opts) {
         if (err) return next();
         res.set('Cache-Control', 'no-cache');
         try {
-          res.type('html').send(inhalteEinbauen(html, await felderFuer(seite.slug)));
+          sendeHtml(req, res, inhalteEinbauen(html, await felderFuer(seite.slug)));
         } catch {
-          res.type('html').send(mitFassung(html));
+          sendeHtml(req, res, mitFassung(html));
         }
       });
     });
@@ -374,7 +491,7 @@ export function mountBuilder(app, opts) {
     fassung: FASSUNG,
     /* Routen mit eigenem, grossem Body-Parser - der allgemeine kleine
        Parser der Website muss sie durchlassen. */
-    grosseRumpfe: ['/api/images', '/api/videos'],
+    grosseRumpfe: ['/api/images', '/api/videos', '/api/dateien'],
     slugFuer: (pfad) => (PAGES.find((p) => p.pfad === pfad) || {}).slug || null,
     felderFuer
   };

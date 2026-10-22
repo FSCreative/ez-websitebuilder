@@ -1,7 +1,7 @@
 {
   "name": "ez-websitebuilder",
-  "version": "1.1.0",
-  "description": "EZ Websitebuilder – Websites direkt auf der Seite bearbeiten (Editor, Blöcke, Bilder, Menü, Design, Animationen)",
+  "version": "1.2.0",
+  "description": "FS Creative Websitebuilder – Websites direkt auf der Seite bearbeiten (Editor, Blöcke, Bilder, Menü, Design, Animationen)",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -19,7 +19,8 @@
     "next/",
     "client/",
     "vorlage/",
-    "README.md"
+    "README.md",
+    "bin/"
   ],
   "engines": {
     "node": ">=20"
@@ -32,5 +33,8 @@
       "optional": false
     }
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "bin": {
+    "fs-websitebuilder": "bin/fs-websitebuilder.js"
+  }
 }
