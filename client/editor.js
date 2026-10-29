@@ -395,12 +395,13 @@ let schriftenGeladen = false;
 function schriftenLaden() {
   if (schriftenGeladen || !zustand.schriften.length) return;
   schriftenGeladen = true;
-  const fam = zustand.schriften.filter((f) => f.google).map((f) => 'family=' + f.google).join('&');
-  if (!fam) return;
-  const l = document.createElement('link');
-  l.rel = 'stylesheet';
-  l.href = 'https://fonts.googleapis.com/css2?' + fam + '&display=swap';
-  document.head.appendChild(l);
+  /* Vom eigenen Server (index.js, schriftenDienst) statt von Google. */
+  for (const f of zustand.schriften.filter((x) => x.google)) {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '/builder/schrift/' + encodeURIComponent(f.id) + '.css';
+    document.head.appendChild(l);
+  }
 }
 
 /* Schriftauswahl: ein Knopf mit der aktuellen Schrift, darunter eine Liste,

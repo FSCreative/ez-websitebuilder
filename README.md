@@ -120,6 +120,11 @@ Ohne `akzentKlasse` gibt es den Knopf „Hervorheben“ nicht – für bestehend
 
 Weitere: `--ez-tinte, --ez-leise, --ez-linie, --ez-flaeche, --ez-weiss, --ez-rot`. Kopf- und Fußzeile: `--kopffarbe, --menufarbe, --burgerfarbe, --fussfarbe, --fussschrift, --titelfarbe`, im eigenen CSS mit Standardwert benutzen, etwa `background:var(--fussfarbe,#f5f5f7)`. Die Farbe des Burger-Symbols (`--burgerfarbe`) setzt `builder.css` selbst – auf `.burger`/`#burger`: Striche als `<span>` ohne Klasse bekommen sie als Hintergrund, sonst gilt sie als `color` (für Striche mit `currentColor`).
 
+## Datenschutz: Schriften und Videos
+
+- **Schriften:** Im Editor wählbare Schriften lädt der Browser über `/builder/schrift/<id>.css` vom eigenen Server. Der Server holt CSS und woff2-Dateien einmal selbst bei Google Fonts (nur `latin`/`latin-ext`) und liefert sie danach aus seinem Zwischenspeicher (`<tmp>/ez-websitebuilder-schriften`). Besucher und Personal haben keine Verbindung zu Google. Die Liste der Schriften steht nur in `client/runtime.js` (`SCHRIFTEN`).
+- **Videos (Block „Einbettung“):** YouTube/Vimeo laden erst nach Zustimmung. Ist auf der Website der Cookie-Banner FS Consent eingebunden (`window.FSConsent`), erscheint dessen Platzhalter im Design der Website mit „Externe Medien immer erlauben“; die Website sollte dann in ihrer FS-Consent-Konfiguration `"categories": { "media": ["YouTube"] }` führen. Ohne FS Consent zeigt der Builder einen eigenen Platzhalter mit „Video laden“. Im Editor laden Videos direkt.
+
 ## Plugins für den Editor
 
 ```js

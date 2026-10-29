@@ -150,6 +150,17 @@
 .ez-einbettung iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .ez-einbettung-leer{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:1rem;text-align:center;
   color:rgba(255,255,255,.7);font-size:.9rem}
+/* Video erst nach Zustimmung: FS Consent (Platzhalter im Design der Website) oder eigener Platzhalter */
+.ez-einbettung > [data-consent-embed]{position:absolute;inset:0}
+.ez-einbettung > [data-consent-embed] > .fsc-ph{height:100%;min-height:0;border-radius:0}
+.ez-einbettung-zustimmung{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:.9rem;padding:1.2rem;
+  text-align:center;color:rgba(255,255,255,.85);font-size:.92rem;line-height:1.5}
+.ez-einbettung-zustimmung p{margin:0;max-width:34rem}
+.ez-einbettung-zustimmung strong{color:#fff;font-size:1.05em}
+.ez-einbettung-knopf{appearance:none;border:1.5px solid rgba(255,255,255,.6);border-radius:999px;padding:.75em 1.6em;
+  background:var(--ez-akzent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.ez-einbettung-knopf:hover{filter:brightness(1.1)}
+.ez-einbettung-knopf:focus-visible{outline:2px solid #fff;outline-offset:3px}
 /* Formular-Block */
 .ezblock-formular h2{font-family:var(--ez-titelschrift);font-weight:400;text-transform:uppercase;letter-spacing:.015em;
   font-size:clamp(1.6rem,3.4vw,2.4rem);line-height:1.08;margin:0 auto .5rem;color:var(--titelfarbe,var(--ez-akzent));max-width:760px}
