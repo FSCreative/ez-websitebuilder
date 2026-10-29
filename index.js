@@ -22,7 +22,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import zlib from 'node:zlib';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const HIER = path.dirname(fileURLToPath(import.meta.url));
